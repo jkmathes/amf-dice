@@ -38,9 +38,12 @@
 */
 #include <CurieBle.h>
 #include "CurieImu.h"
+#include <Adafruit_NeoPixel.h>
 
+// SERIAL_DEBUG Macro
+// During normal run, set debug to 0.
+// System will wait indefinitely on SERIAL_SETUP() if set to 1 without serial hookup.
 #define SERIAL_DEBUG 0
-
 #if SERIAL_DEBUG
 #define SERIAL_SETUP(baud)  Serial.begin(baud);while (!Serial)
 #define SERIAL_PRINT        Serial.print
@@ -51,40 +54,101 @@
 #define SERIAL_PRINTLN(...)
 #endif
 
+// ************* NeoPixel ********************************************
+#define PIXEL_PIN       6     // Where the NeoPixel DIN pin is connected
+#define NUMPIXELS       8     // Number of LEDS on NeoPixel
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
+void dispLed(int mask, int color, int dlay) {
+  int r = (color>>8)&0xf;
+  int g = (color>>4)&0xf;
+  int b = color&0xf;
+  int c = (r<<16) | (g<<8) | (b);  
+  for (int i=0; i<NUMPIXELS; i++)
+  {
+    if (mask&(1<<i)) pixels.setPixelColor(i,c);
+  }
+  pixels.show();
+  pixels.show();  // 2nd time helps fix a bug with bright LED0 issue.
+  delay(dlay);
+}
 
 // ************* BLE **************************************************
-BLEPeripheral blePeripheral;       // BLE Peripheral Device (the board you're programming)
-BLEService batteryService("180F"); // BLE Battery Service
-
-// BLE Battery Level Characteristic"
-BLECharacteristic batteryLevelChar("2A19",  // standard 16-bit characteristic UUID
-    BLERead | BLENotify, 20);     // remote clients will be able to
-// get notifications if this characteristic changes
-
-int oldBatteryLevel = 0;  // last battery level reading from analog input
-long previousMillis = 0;  // last time the battery level was checked, in ms
-
-char blePayload[20];
+BLEPeripheral blePeripheral;        // BLE Peripheral Device (the board you're programming)
+BLEService batteryService("180F");  // BLE Service
+BLECharacteristic batteryLevelChar( // BLE Characteristic
+  "2A19",                 // standard 16-bit characteristic UUID
+  BLERead | BLENotify,    // remote clients can get notifications if characteristic changes
+  20);                    // payload size
+boolean gConnect = false;
+int16_t   diceId = 1;
+uint16_t  seqNum = 0;
+uint16_t nextSeqNum() {
+  seqNum++;
+  return seqNum;
+}
 
 // ************* IMU **************************************************
-int16_t ax, ay, az;         // accelerometer values
-int16_t gx, gy, gz;         // gyrometer values
+int16_t vraw[10]; // raw readings from IMU and info for sending via BLE
+                  // [0:5]=AxAyAzGxGyGz, [6]=movement, [7]=stillMs, [8]=diceId, [9]=seqNum
+int vprev[6];     // previous reading
+
+int16_t movement=0;
+unsigned long stillBegin;
+unsigned long stillMillis=0;   // number of sequential zero movements
+
+
+int16_t imuRead() {
+  for (int i=0; i<6; i++) vprev[i] = vraw[i];
+  CurieImu.getMotion6(&vraw[0], &vraw[1], &vraw[2], &vraw[3], &vraw[4], &vraw[5]);
+  movement = 0;
+  for (int i=0; i<6; i++) {
+    int m = (abs(vprev[i]-vraw[i])) >> 8;
+    if (m>movement) movement = m;
+  }
+  // movement is 8 bits
+  int mask = 0x0;
+  int t = 0x1;
+  for (int i=0; i<8; i++) {
+    if (movement > (t<<i)) mask = (mask << 1) | 1;
+  }
+  if (movement==0) {
+    if (stillMillis==0) {
+      stillBegin = millis();
+      stillMillis = 1;
+    }
+    else
+      stillMillis = millis() - stillBegin;
+  }
+  else stillMillis=0;
+  
+  SERIAL_PRINT(movement);
+  SERIAL_PRINT("\t");
+  
+  SERIAL_PRINTLN(stillMillis);
+  
+  dispLed(0xff, 0x000, 0);
+  dispLed(mask, 0x00f, 0);
+
+  return movement;
+}
+
 
 const int ledPin = 13;      // activity LED pin
 boolean blinkState = false; // state of the LED
-
-int16_t vval[6];
-int vmin[6];
-int vmax[6];
-int vlast[6];
-int16_t va[6];
-boolean gConnect = false;
-
+// ************* setup **************************************************
 void setup() {
-  //Serial.begin(9600); // initialize Serial communication
-  //while (!Serial);    // wait for the serial port to open
+  pixels.begin();
+  pixels.show();
+  dispLed(0xff, 0x0, 0);        // all off
+  dispLed(0xff, 0xfff, 1000);   // all white 1-sec
+  dispLed(0xff, 0xff0, 500);
+  dispLed(0xff, 0x0f0, 500);
+  dispLed(0xff, 0x000, 0);
+  
   SERIAL_SETUP(9600);
 
+  dispLed(0x01, 0xff0, 0);      // 0 - yellow BLE setup
 
 // *********** BLE **************************************
   /* Set a local name for the BLE device
@@ -97,8 +161,7 @@ void setup() {
   blePeripheral.addAttribute(batteryLevelChar); // add the battery level characteristic
   blePeripheral.setEventHandler(BLEConnected, connectHandler);
   blePeripheral.setEventHandler(BLEDisconnected, disconnectHandler);
-  //batteryLevelChar.setValue(oldBatteryLevel);   // initial value for this characteristic
-  batteryLevelChar.setValue((unsigned char *)vval,6);   // initial value for this characteristic
+  batteryLevelChar.setValue((unsigned char *)vraw,20);   // initial value for this characteristic
 
   /* Now activate the BLE device.  It will start continuously transmitting BLE
      advertising packets and will be visible to remote BLE central devices
@@ -106,9 +169,9 @@ void setup() {
   blePeripheral.begin();
   SERIAL_PRINTLN("Bluetooth device active, waiting for connections...");
 
+  dispLed(0x01, 0x0f0, 0);      // 0 - green BLE setup done
 
-
-
+  dispLed(0x02, 0xff0, 0);      // 1 - yellow IMU setup
 
   // initialize device
   SERIAL_PRINTLN("Initializing IMU device...");
@@ -120,6 +183,7 @@ void setup() {
     SERIAL_PRINTLN("CurieImu connection successful");
   } else {
     SERIAL_PRINTLN("CurieImu connection failed");
+    dispLed(0x80,0xf00,0);      // 8 - red - err connecting to IMU
   }
   
   // use the code below to calibrate accel/gyro offset values
@@ -145,58 +209,43 @@ void setup() {
   //    CurieImu.setYAccelOffset(-235);
   //    CurieImu.setZAccelOffset(168);
 
-  SERIAL_PRINT("Size of int is: ");
-  SERIAL_PRINTLN(sizeof(int));
-  SERIAL_PRINT("Size of long is: ");
-  SERIAL_PRINTLN(sizeof(long));
-  SERIAL_PRINT("Size of float is: ");
-  SERIAL_PRINTLN(sizeof(float));
-  SERIAL_PRINT("Size of double is: ");
-  SERIAL_PRINTLN(sizeof(double));
-  SERIAL_PRINTLN("About to calibrate. Make sure your board is stable and upright");
-  delay(5000);
+  dispLed(0x02, 0x00f, 0);      // 1 - blue IMU - orient dice for calibration
+
+  //SERIAL_PRINTLN("About to calibrate. Make sure your board is stable and upright");
+  //delay(5000);
   
-  // The board must be resting in a horizontal position for 
-  // the following calibration procedure to work correctly!
-  SERIAL_PRINT("Starting Gyroscope calibration...");
-  CurieImu.autoCalibrateGyroOffset();
-  SERIAL_PRINTLN(" Done");
-  SERIAL_PRINT("Starting Acceleration calibration...");
-  CurieImu.autoCalibrateXAccelOffset(0);
-  CurieImu.autoCalibrateYAccelOffset(0);
-  CurieImu.autoCalibrateZAccelOffset(1);
-  SERIAL_PRINTLN(" Done");
+  //// The board must be resting in a horizontal position for 
+  //// the following calibration procedure to work correctly!
+  //SERIAL_PRINT("Starting Gyroscope calibration...");
+  //CurieImu.autoCalibrateGyroOffset();
+  //SERIAL_PRINTLN(" Done");
+  //SERIAL_PRINT("Starting Acceleration calibration...");
+  //CurieImu.autoCalibrateXAccelOffset(0);
+  //CurieImu.autoCalibrateYAccelOffset(0);
+  //CurieImu.autoCalibrateZAccelOffset(1);
+  //SERIAL_PRINTLN(" Done");
 
-  SERIAL_PRINTLN("Internal sensor offsets AFTER calibration...");
-  SERIAL_PRINT(CurieImu.getXAccelOffset());
-  SERIAL_PRINT("\t"); // -76
-  SERIAL_PRINT(CurieImu.getYAccelOffset());
-  SERIAL_PRINT("\t"); // -2359
-  SERIAL_PRINT(CurieImu.getZAccelOffset());
-  SERIAL_PRINT("\t"); // 1688
-  SERIAL_PRINT(CurieImu.getXGyroOffset());
-  SERIAL_PRINT("\t"); // 0
-  SERIAL_PRINT(CurieImu.getYGyroOffset());
-  SERIAL_PRINT("\t"); // 0
-  SERIAL_PRINTLN(CurieImu.getZGyroOffset());
+  //SERIAL_PRINTLN("Internal sensor offsets AFTER calibration...");
+  //SERIAL_PRINT(CurieImu.getXAccelOffset());
+  //SERIAL_PRINT("\t"); // -76
+  //SERIAL_PRINT(CurieImu.getYAccelOffset());
+  //SERIAL_PRINT("\t"); // -2359
+  //SERIAL_PRINT(CurieImu.getZAccelOffset());
+  //SERIAL_PRINT("\t"); // 1688
+  //SERIAL_PRINT(CurieImu.getXGyroOffset());
+  //SERIAL_PRINT("\t"); // 0
+  //SERIAL_PRINT(CurieImu.getYGyroOffset());
+  //SERIAL_PRINT("\t"); // 0
+  //SERIAL_PRINTLN(CurieImu.getZGyroOffset());
 
-  SERIAL_PRINTLN("Enabling Gyroscope/Acceleration offset compensation");
+  //SERIAL_PRINTLN("Enabling Gyroscope/Acceleration offset compensation");
   CurieImu.setGyroOffsetEnabled(true);
   CurieImu.setAccelOffsetEnabled(true);
 
   // configure Arduino LED for activity indicator
   pinMode(ledPin, OUTPUT);
 
-  //CurieImu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  CurieImu.getMotion6(&vval[0], &vval[1], &vval[2], &vval[3], &vval[4], &vval[5]);
-
-
-
-  for (int i=0; i<6; i++) {
-    vmin[i] = vval[i];
-    vmax[i] = vval[i];
-    vlast[i] = vval[i];
-  }
+  dispLed(0x02, 0x0f0, 0);      // 1 - green IMU setup done
 
 }
 
@@ -225,109 +274,17 @@ void disconnectHandler(BLECentral& central)
 }
 
 void loop() {
-  blePeripheral.poll(); // currently does delay(1);
-  // listen for BLE peripherals to connect:
-  //BLECentral central = blePeripheral.central();
-    // if a central is connected to peripheral:
+  blePeripheral.poll();       // current implementation just does delay(1);
 
-  CurieImu.getMotion6(&vval[0], &vval[1], &vval[2], &vval[3], &vval[4], &vval[5]);
-  
-  for (int i=0; i<6; i++) va[i] = vval[i];
-  atten(va, 6, 10);
-
-  
+  imuRead();
+    
   if (gConnect) {
     SERIAL_PRINT("Sending: ");
-    batteryLevelChar.setValue((unsigned char*) va, 6);
+    vraw[6] = (int16_t) movement;
+    int16_t stillDur = (stillMillis>32000)? 32000 : stillMillis;
+    vraw[7] = stillDur;
+    vraw[8] = diceId;
+    vraw[9] = nextSeqNum();
+    batteryLevelChar.setValue((unsigned char*) vraw, 20);
   }
-  if (1) {
-    for (int i=0; i<6; i++) {
-      SERIAL_PRINT(va[i]);
-      SERIAL_PRINT("\t");
-    }
-    //SERIAL_PRINTLN("");
-  }
-
-  SERIAL_PRINT(" ---- ");
-
-
-  for (int i=0; i<6; i++) {
-    SERIAL_PRINT(abs(vlast[i]-vval[i]));
-    SERIAL_PRINT("\t");
-    vlast[i] = vval[i];
-  }
-  SERIAL_PRINTLN("");
-
-  
-#if 0  
-  // read raw accel/gyro measurements from device
-  //CurieImu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  CurieImu.getMotion6(&vval[0], &vval[1], &vval[2], &vval[3], &vval[4], &vval[5]);
-
-  atten(vval, 6, 10);
-
-/*
-  int newRange = 0;
-  for (int i=0; i<6; i++) {
-    if (vval[i] > vmax[i]) {
-      vmax[i] = vval[i];
-      newRange = 1;
-    }
-    if (vval[i] < vmin[i]) {
-      vmin[i] = vval[i];
-      newRange = 1;
-    }
-  }
-
-  if (newRange) {
-    for (int i=0; i<6; i++) {
-      Serial.print(vmin[i]);
-      Serial.print(":");
-      Serial.print(vmax[i]);
-      Serial.print("=");
-      Serial.print(vmax[i]-vmin[i]);
-      Serial.print("\t");
-    }
-    Serial.println("");
-  }
-*/
-  int show=0;
-  for (int i=0; i<3; i++) {
-    if (vval[i] != vlast[i]) {
-      vlast[i]=vval[i];
-      show=1;
-    }
-  }
-  if (show) {
-      for (int i=0; i<6; i++) {
-      SERIAL_PRINT(vlast[i]);
-      SERIAL_PRINT("\t");
-    }
-    SERIAL_PRINTLN("");
-  }
-
-  
-  delay(20);
-  // these methods (and a few others) are also available
-  //CurieImu.getAcceleration(&ax, &ay, &az);
-  //CurieImu.getRotation(&gx, &gy, &gz);
-
-  // display tab-separated accel/gyro x/y/z values
-  //Serial.print("a/g:\t");
-  //Serial.print(ax);
-  //Serial.print("\t");
-  //Serial.print(ax);
-  //Serial.print("\t");
-  //Serial.print(ax);
-  //Serial.print("\t");
-  //Serial.print(gx);
-  //Serial.print("\t");
-  //Serial.print(gy);
-  //Serial.print("\t");
-  //Serial.println(gz);
-
-  // blink LED to indicate activity
-  blinkState = !blinkState;
-  digitalWrite(ledPin, blinkState);
-#endif
 }
