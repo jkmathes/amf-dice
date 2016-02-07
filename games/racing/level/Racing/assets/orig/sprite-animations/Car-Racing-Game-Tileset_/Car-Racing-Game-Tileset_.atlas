@@ -1,0 +1,432 @@
+
+Car-Racing-Game-Tileset_.png
+size: 1024,1024
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 782
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 1
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 652
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 2
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 782
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 3
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 522
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 4
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 652
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 5
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 782
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 6
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 392
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 7
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 522
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 8
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 652
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 9
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 392, 782
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 10
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 11
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 392
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 12
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 522
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 13
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 392, 652
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 14
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 522, 782
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 15
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 16
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 17
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 392
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 18
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 392, 522
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 19
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 522, 652
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 20
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 782
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 21
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 22
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 23
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 24
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 392, 392
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 25
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 522, 522
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 26
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 652
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 27
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 782, 782
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 28
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 29
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 30
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 392, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 31
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 522, 392
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 32
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 522
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 33
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 782, 652
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 34
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 35
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 392, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 36
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 522, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 37
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 392
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 38
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 782, 522
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 39
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 392, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 40
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 522, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 41
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 42
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 782, 392
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 43
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 522, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 44
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 45
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 782, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 46
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 47
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 56
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 48
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 57
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 58
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 652, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 55
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 782, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 49
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 782, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 50
+
+Car-Racing-Game-Tileset_2.png
+size: 512,512
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 51
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 52
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 53
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 2, 2
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 54
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 132, 132
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 59
+Car-Racing-Game-Tileset
+  rotate: false
+  xy: 262, 262
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 60
