@@ -163,13 +163,12 @@ public class GameWorld extends World implements Constants {
       addObject(c);
     }
     
-    if(_car.inMotion() == false && _launched == false) {
-      _launched = true;
+    if(_car.inMotion() == false) {
       Random r = new Random();
       int value = r.nextInt(6) + 1;
-      Dice d = new Dice(this, value);
-      d.setPosition(new Vector2(9 * 128 + 45, 45));
-      d.setTargetPosition(_car.getPosition().x, _car.getPosition().y);
+      int corner = (int)(Math.random() * 4);
+      Dice d = new Dice(this, value, corner);
+      d.setTargetPosition(_car);
       addObject(d);
     }
     

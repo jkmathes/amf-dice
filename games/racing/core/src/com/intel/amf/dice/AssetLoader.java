@@ -70,7 +70,7 @@ public class AssetLoader {
     for(int f = 0; f < 6; f++) {
       t = new Texture(Gdx.files.internal("dice_white.png"));
       t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-      tr = new TextureRegion(t, 0, 0, 37, 37);
+      tr = new TextureRegion(t, f * 37, 0, 37, 37);
       tr.flip(false, true);
       _diceWhite[f] = tr;
     }

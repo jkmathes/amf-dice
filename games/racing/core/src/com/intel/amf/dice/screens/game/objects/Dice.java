@@ -10,39 +10,72 @@ public class Dice extends RenderObject {
   protected int _value;
   public int _targetx;
   public int _targety;
+
+  protected int _bezierx;
+  protected int _beziery;
+
+  protected float _duration;
+  protected float _elapsed;
+
+  protected int _startx;
+  protected int _starty;
   
-  protected float _incx;
-  protected float _incy;
+  protected int _corner;
   
-  public Dice(World w, int value) {
+  protected int [] _bezierStartx;
+  protected int [] _bezierStarty;
+  
+  protected int [] _cornerx;
+  protected int [] _cornery;
+  
+  protected Car _car;
+
+  public Dice(World w, int value, int corner) {
     super(w);
+    _duration = 1.0f;
+    _elapsed = 0.0f;
     _value = value;
+    _corner = corner;
+    _bezierStartx = new int[]{400, 400, 800, 400};
+    _bezierStarty = new int[]{400, 400, 800, 800};
+    _cornerx = new int[]{0 * 128 + 45, 9 * 128 + 45, 0 * 128 + 45, 9 * 128 + 45};
+    _cornery = new int[]{0 * 128 + 45, 0 * 128 + 45, 4 * 128 + 45, 4 * 128 + 45};
+    _position.x = _cornerx[_corner];
+    _position.y = _cornery[_corner];
   }
 
   @Override
   protected void updateObject(float delta) {
+    _elapsed += delta;
+    float t = _elapsed / _duration;
+    _position.x = (1 - t) * (1 - t) * _startx + 2 * (1 - t) * t * _bezierx + t * t * _targetx;
+    _position.y = (1 - t) * (1 - t) * _starty + 2 * (1 - t) * t * _beziery + t * t * _targety;
+    
+    if(Math.abs(_position.x - _targetx) < 20 && Math.abs(_position.y - _targety) < 20) {
+      _live = false;
+      _car.go();
+    }
   }
 
   @Override
   public void render(SpriteBatch sb, Renderer r) {
     sb.draw(AssetLoader._diceWhite[_value - 1], _position.x - 18, _position.y - 18);
   }
-  
-  public void setTargetPosition(float x, float y) {
-    if(x > _position.x) {
-      _velocity.x = 600;
-    }
-    else {
-      _velocity.x = -600;
-    }
+
+  public void setTargetPosition(Car c) {
+    float x = c.getPosition().x;
+    float y = c.getPosition().y;
     
-    if(y > _position.y) {
-      _velocity.y = 600;
-      _acceleration.y = -800;
-    }
-    else {
-      _velocity.y = -600;
-      _acceleration.y = 800;
-    }
+    _startx = (int)_position.x;
+    _starty = (int)_position.y;
+
+    _targetx = (int)x;
+    _targety = (int)y;
+    
+    _bezierx = _bezierStartx[_corner];
+    _beziery = _bezierStarty[_corner];
+    
+    c.incrementPathIndex(_value * 3);
+    _car = c;
   }
 }

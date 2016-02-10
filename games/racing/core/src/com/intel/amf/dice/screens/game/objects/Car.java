@@ -14,6 +14,7 @@ public class Car extends RenderObject {
   protected int _lastY;
   protected float _counter;
   protected int _targetPathIndex;
+  protected boolean _go;
   
   public Car(World w, int x, int y, int width, int height) {
     super(w);
@@ -25,6 +26,7 @@ public class Car extends RenderObject {
     _counter = 0;
     _lastX = x - 16;
     _lastY = y;
+    _go = false;
   }
 
   @Override
@@ -35,11 +37,10 @@ public class Car extends RenderObject {
     }
     
     _counter = 0;
-    //_pathIndex++;
     
-    //if(_pathIndex < _targetPathIndex) {
-    //  _pathIndex++;
-    //}
+    if(_go && _pathIndex < _targetPathIndex) {
+      _pathIndex++;
+    }
     
     if(_pathIndex > ((GameWorld)_world).getPath().size() - 1) {
       _pathIndex = 0;
@@ -88,7 +89,12 @@ public class Car extends RenderObject {
     if(_pathIndex < _targetPathIndex) {
       return true;
     }
+    _go = false;
     return false;
+  }
+  
+  public void go() {
+    _go = true;
   }
   
   @Override
