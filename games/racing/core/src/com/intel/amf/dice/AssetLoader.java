@@ -13,7 +13,7 @@ public class AssetLoader {
   public static TextureRegion [] _diceWhite;
   public static TextureRegion [] _diceBlue;
   public static TextureRegion _backrock;
-  public static TextureRegion _car; 
+  public static TextureRegion [] _cars; 
   public static TextureRegion _logo;
   
   public static void load() {
@@ -62,11 +62,15 @@ public class AssetLoader {
     _backrock = tr;
     
     // 517 (5), 70 (42x28)
-    t = new Texture(Gdx.files.internal(root + "05.png"));
-    t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-    tr = new TextureRegion(t, 5, 48, 42, 28);
-    tr.flip(false, true);
-    _car = tr;
+    _cars = new TextureRegion[4];
+    String [] carIndexes = new String[]{"05.png", "07.png", "15.png", "17.png"};
+    for(int f = 0; f < carIndexes.length; f++) {
+      t = new Texture(Gdx.files.internal(root + carIndexes[f]));
+      t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+      tr = new TextureRegion(t, 5, 48, 42, 28);
+      tr.flip(false, true);
+      _cars[f] = tr;
+    }
     
     t = new Texture(Gdx.files.internal("intel-logo.png"));
     t.setFilter(TextureFilter.Linear, TextureFilter.Linear);

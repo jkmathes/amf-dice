@@ -1,10 +1,11 @@
 package com.intel.amf.dice.screens.game.objects;
 
+import java.util.Random;
+
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.intel.amf.dice.AssetLoader;
 import com.intel.amf.dice.screens.RenderObject;
 import com.intel.amf.dice.screens.Renderer;
-import com.intel.amf.dice.screens.World;
 import com.intel.amf.dice.screens.game.GameWorld;
 
 public class Car extends RenderObject {
@@ -15,9 +16,13 @@ public class Car extends RenderObject {
   protected float _counter;
   protected int _targetPathIndex;
   protected boolean _go;
+  protected int _carIndex;
+  protected GameWorld _w;
+  public static int [] PATH_OFFSETS = new int[]{-30, -15, 0, 15};
   
-  public Car(World w, int x, int y, int width, int height) {
+  public Car(GameWorld w, int x, int y, int width, int height, int carIndex) {
     super(w);
+    _w = w;
     _position.x = x;
     _position.y = y;
     _width = width;
@@ -27,10 +32,19 @@ public class Car extends RenderObject {
     _lastX = x - 16;
     _lastY = y;
     _go = false;
+    _carIndex = carIndex;
   }
 
   @Override
   protected void updateObject(float delta) {
+    if(inMotion() == false) {
+      Random r = new Random();
+      int value = r.nextInt(100) + 1;
+      if(value > 95) {
+      _w.roll(_carIndex);
+      }
+    }
+    
     _counter += delta;
     if(_counter < 0.015) {
       return;
@@ -99,6 +113,6 @@ public class Car extends RenderObject {
   
   @Override
   public void render(SpriteBatch sb, Renderer r) {
-    sb.draw(AssetLoader._car, getX() - (getWidth() / 2), getY() - (getHeight() / 2), getWidth() / 2, getHeight() / 2, getWidth(), getHeight(), 1.0f, 1.0f, _rot);
+    sb.draw(AssetLoader._cars[_carIndex], getX() - (getWidth() / 2), getY() - (getHeight() / 2), getWidth() / 2, getHeight() / 2, getWidth(), getHeight(), 1.0f, 1.0f, _rot);
   }
 }

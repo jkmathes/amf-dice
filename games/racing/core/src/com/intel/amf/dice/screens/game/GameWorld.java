@@ -22,7 +22,7 @@ public class GameWorld extends World implements Constants {
   public int[][] _map = new int[5][10];
   
   protected ArrayList<Vector2> _path;
-  protected Car _car;
+  protected Car [] _cars;
   protected boolean _launched;
 
   public GameWorld(float gameHeight) {
@@ -164,18 +164,11 @@ public class GameWorld extends World implements Constants {
       addObject(d);
       _cornerDice[3] = d;
       
-      Car c = new Car(this, (int)_path.get(0).x, (int)_path.get(0).y, 42, 28);
-      _car = c;
-      addObject(c);
-    }
-    
-    if(_car.inMotion() == false) {
-      Random r = new Random();
-      int value = r.nextInt(6) + 1;
-      int corner = (int)(Math.random() * 4);
-      Dice d = new Dice(this, value, corner);
-      d.setTargetPosition(_car);
-      addObject(d);
+      _cars = new Car[4];
+      for(int f = 0; f < _cars.length; f++) {
+        _cars[f] = new Car(this, (int)_path.get(0).x, (int)_path.get(0).y, 42, 28, f);
+        addObject(_cars[f]);
+      }
     }
     
     processFlungQueue();
@@ -183,6 +176,14 @@ public class GameWorld extends World implements Constants {
     processCreatedObjects();
   }
 
+  public void roll(int corner) {
+    Random r = new Random();
+    int value = r.nextInt(6) + 1;
+    Dice d = new Dice(this, value, corner);
+    d.setTargetPosition(_cars[corner]);
+    addObject(d);
+  }
+  
   public SpinningDice [] getCornerDice() {
     return _cornerDice;
   }
