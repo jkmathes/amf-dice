@@ -11,8 +11,10 @@ public class AssetLoader {
   public static Animation _diceAnimationBlue;
   public static Animation _diceAnimationWhite;
   public static TextureRegion [] _diceWhite;
+  public static TextureRegion [] _diceBlue;
   public static TextureRegion _backrock;
   public static TextureRegion _car; 
+  public static TextureRegion _logo;
   
   public static void load() {
     _sprites = new TextureRegion[Constants.SPRITES_NEEDED.length];
@@ -66,6 +68,12 @@ public class AssetLoader {
     tr.flip(false, true);
     _car = tr;
     
+    t = new Texture(Gdx.files.internal("intel-logo.png"));
+    t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+    tr = new TextureRegion(t, 0, 0, 2000, 1324);
+    tr.flip(false, true);
+    _logo = tr;
+    
     _diceWhite = new TextureRegion[6];
     for(int f = 0; f < 6; f++) {
       t = new Texture(Gdx.files.internal("dice_white.png"));
@@ -73,6 +81,15 @@ public class AssetLoader {
       tr = new TextureRegion(t, f * 37, 0, 37, 37);
       tr.flip(false, true);
       _diceWhite[f] = tr;
+    }
+    
+    _diceBlue = new TextureRegion[6];
+    for(int f = 0; f < 6; f++) {
+      t = new Texture(Gdx.files.internal("dice_blue.png"));
+      t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+      tr = new TextureRegion(t, f * 37, 0, 37, 37);
+      tr.flip(false, true);
+      _diceBlue[f] = tr;
     }
   }
   

@@ -18,6 +18,7 @@ public class GameWorld extends World implements Constants {
   protected List<RenderObject> _createdObjects;
   protected int _gameHeight;
   protected boolean _init; 
+  protected SpinningDice [] _cornerDice; 
   public int[][] _map = new int[5][10];
   
   protected ArrayList<Vector2> _path;
@@ -138,25 +139,30 @@ public class GameWorld extends World implements Constants {
 
     if(_init) {
       _init = false;
+      _cornerDice = new SpinningDice[4];
       SpinningDice d = new SpinningDice(this, SpinningDice.Color.BLUE);
       d.setX(45);
       d.setY(45);
       addObject(d);
+      _cornerDice[0] = d;
       
       d = new SpinningDice(this, SpinningDice.Color.WHITE);
       d.setX(9 * 128 + 45);
       d.setY(45);
       addObject(d);
+      _cornerDice[1] = d;
+            
+      d = new SpinningDice(this, SpinningDice.Color.WHITE);
+      d.setX(45);
+      d.setY(4 * 128 + 45);
+      addObject(d);
+      _cornerDice[2] = d;
       
       d = new SpinningDice(this, SpinningDice.Color.BLUE);
       d.setX(9 * 128 + 45);
       d.setY(4 * 128 + 45);
       addObject(d);
-      
-      d = new SpinningDice(this, SpinningDice.Color.WHITE);
-      d.setX(45);
-      d.setY(4 * 128 + 45);
-      addObject(d);
+      _cornerDice[3] = d;
       
       Car c = new Car(this, (int)_path.get(0).x, (int)_path.get(0).y, 42, 28);
       _car = c;
@@ -177,6 +183,10 @@ public class GameWorld extends World implements Constants {
     processCreatedObjects();
   }
 
+  public SpinningDice [] getCornerDice() {
+    return _cornerDice;
+  }
+  
   public void setRenderer(GameRenderer r) {
   }
 

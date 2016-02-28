@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.intel.amf.dice.AssetLoader;
 import com.intel.amf.dice.screens.RenderObject;
 import com.intel.amf.dice.screens.Renderer;
-import com.intel.amf.dice.screens.World;
+import com.intel.amf.dice.screens.game.GameWorld;
 
 public class Dice extends RenderObject {
   protected int _value;
@@ -28,9 +28,11 @@ public class Dice extends RenderObject {
   protected int [] _cornerx;
   protected int [] _cornery;
   
+  protected SpinningDice _cornerDice;
+  
   protected Car _car;
 
-  public Dice(World w, int value, int corner) {
+  public Dice(GameWorld w, int value, int corner) {
     super(w);
     _duration = 1.0f;
     _elapsed = 0.0f;
@@ -42,6 +44,11 @@ public class Dice extends RenderObject {
     _cornery = new int[]{0 * 128 + 45, 0 * 128 + 45, 4 * 128 + 45, 4 * 128 + 45};
     _position.x = _cornerx[_corner];
     _position.y = _cornery[_corner];
+    
+    SpinningDice sd = w.getCornerDice()[corner];
+    sd.setRoll(value);
+    sd.setSpinning(false);
+    _cornerDice = sd;
   }
 
   @Override
@@ -54,12 +61,18 @@ public class Dice extends RenderObject {
     if(Math.abs(_position.x - _targetx) < 20 && Math.abs(_position.y - _targety) < 20) {
       _live = false;
       _car.go();
+      _cornerDice.setSpinning(true);
     }
   }
 
   @Override
   public void render(SpriteBatch sb, Renderer r) {
-    sb.draw(AssetLoader._diceWhite[_value - 1], _position.x - 18, _position.y - 18);
+    if(_cornerDice.getColor() == SpinningDice.Color.WHITE) {
+      sb.draw(AssetLoader._diceWhite[_value - 1], _position.x - 18, _position.y - 18);
+    }
+    else {
+      sb.draw(AssetLoader._diceBlue[_value - 1], _position.x - 18, _position.y - 18);
+    }
   }
 
   public void setTargetPosition(Car c) {

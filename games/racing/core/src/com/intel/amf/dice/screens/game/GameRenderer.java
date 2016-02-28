@@ -121,6 +121,7 @@ public class GameRenderer extends Renderer implements Constants {
     _batcher.draw(AssetLoader._backrock, 0, 4 * 128);
     _batcher.draw(AssetLoader._backrock, 9 * 128, 0);
     _batcher.draw(AssetLoader._backrock, 9 * 128, 4 * 128);
+    //_batcher.draw(AssetLoader._logo, 490, 412, 0, 0, 300, 200, 1.0f, 1.0f, 0f);
     _batcher.end();
   }
   
