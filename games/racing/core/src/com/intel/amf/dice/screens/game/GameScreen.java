@@ -20,7 +20,6 @@ public class GameScreen implements Screen {
     float gameHeight = screenHeight / (screenWidth / gameWidth);
     int midPointY = (int) (gameHeight / 2);
     
-    System.out.println(screenWidth + " x " + screenHeight);
     _world = new GameWorld(gameHeight);
 
     final Gestures gestures = new Gestures(_world, screenWidth / gameWidth, screenHeight / gameHeight);

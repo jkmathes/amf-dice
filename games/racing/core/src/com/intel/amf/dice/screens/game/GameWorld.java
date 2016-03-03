@@ -1,12 +1,18 @@
 package com.intel.amf.dice.screens.game;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import com.badlogic.gdx.math.Vector2;
 import com.intel.amf.dice.Constants;
+import com.intel.amf.dice.Orchestration;
+import com.intel.amf.dice.Orchestration.WorkHandler;
 import com.intel.amf.dice.screens.RenderObject;
 import com.intel.amf.dice.screens.World;
 import com.intel.amf.dice.screens.game.objects.Car;
@@ -24,9 +30,14 @@ public class GameWorld extends World implements Constants {
   protected ArrayList<Vector2> _path;
   protected Car [] _cars;
   protected boolean _launched;
+  
+  protected Orchestration _orch;
+  protected HashMap<String, WorkHandler>  _handlers;
 
   public GameWorld(float gameHeight) {
     super();
+    createHandlers();
+    _orch = new Orchestration("http://localhost:3000");
     _objects = new ArrayList<RenderObject>();
     _createdObjects = new ArrayList<RenderObject>();
     _gameHeight = (int)gameHeight;
@@ -137,30 +148,41 @@ public class GameWorld extends World implements Constants {
       delta = 0.15f;
     }
 
+    if(_orch.hasWork()) {
+      String msg = _orch.getWork();
+      try {
+        JSONObject j = new JSONObject(msg);
+        parseMessage(j);
+      }
+      catch(JSONException e) {
+        e.printStackTrace();
+      }
+    }
+    
     if(_init) {
       _init = false;
       _cornerDice = new SpinningDice[4];
       SpinningDice d = new SpinningDice(this, SpinningDice.Color.BLUE);
-      d.setX(45);
-      d.setY(45);
+      d.setX(CORNER_DICE_OFFSET);
+      d.setY(CORNER_DICE_OFFSET);
       addObject(d);
       _cornerDice[0] = d;
       
       d = new SpinningDice(this, SpinningDice.Color.WHITE);
-      d.setX(9 * 128 + 45);
-      d.setY(45);
+      d.setX(9 * TILE_SIZE + CORNER_DICE_OFFSET);
+      d.setY(CORNER_DICE_OFFSET);
       addObject(d);
       _cornerDice[1] = d;
             
       d = new SpinningDice(this, SpinningDice.Color.WHITE);
-      d.setX(45);
-      d.setY(4 * 128 + 45);
+      d.setX(CORNER_DICE_OFFSET);
+      d.setY(4 * TILE_SIZE + CORNER_DICE_OFFSET);
       addObject(d);
       _cornerDice[2] = d;
       
       d = new SpinningDice(this, SpinningDice.Color.BLUE);
-      d.setX(9 * 128 + 45);
-      d.setY(4 * 128 + 45);
+      d.setX(9 * TILE_SIZE + CORNER_DICE_OFFSET);
+      d.setY(4 * TILE_SIZE + CORNER_DICE_OFFSET);
       addObject(d);
       _cornerDice[3] = d;
       
@@ -176,12 +198,43 @@ public class GameWorld extends World implements Constants {
     processCreatedObjects();
   }
 
-  public void roll(int corner) {
-    Random r = new Random();
-    int value = r.nextInt(6) + 1;
-    Dice d = new Dice(this, value, corner);
-    d.setTargetPosition(_cars[corner]);
-    addObject(d);
+  protected void createHandlers() {
+    _handlers = new HashMap<String, WorkHandler>();
+    _handlers.put("roll", new WorkHandler() {
+
+      @Override
+      public void handle(JSONObject j) {
+        try {
+          int carIndex = j.getInt("dice");
+          int value = j.getInt("value");
+          roll(carIndex, value);
+        }
+        catch(JSONException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+  }
+  
+  public void parseMessage(JSONObject j) { 
+    try {
+      String type = j.getString("type");
+      JSONObject payload = j.getJSONObject("payload");
+      if(type != null && payload != null) {
+        _handlers.get(type).handle(payload);
+      }
+    }
+    catch(JSONException e) {
+      e.printStackTrace();
+    }
+  }
+  
+  public void roll(int corner, int value) {
+    if(_cars[corner].inMotion() == false) {
+      Dice d = new Dice(this, value, corner);
+      d.setTargetPosition(_cars[corner]);
+      addObject(d);
+    }
   }
   
   public SpinningDice [] getCornerDice() {

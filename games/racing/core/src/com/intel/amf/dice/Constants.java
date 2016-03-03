@@ -10,6 +10,9 @@ public interface Constants {
   public static float FONT_WIDTH = 51;
   public static float FONT_SCALE = 0.5f;
 
+  public static int TILE_SIZE = 128;
+  public static int CORNER_DICE_OFFSET = 45;
+  
   //                                                    Grass Start Vert  Horiz UL    UR    LL    LR
   //                                                    0     1     2     3     4     5     6     7
   public static String [] SPRITES_NEEDED = new String[]{"03", "22", "31", "32", "41", "42", "51", "52"};

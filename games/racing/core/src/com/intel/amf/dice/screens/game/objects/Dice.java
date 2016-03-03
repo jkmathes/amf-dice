@@ -2,11 +2,12 @@ package com.intel.amf.dice.screens.game.objects;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.intel.amf.dice.AssetLoader;
+import com.intel.amf.dice.Constants;
 import com.intel.amf.dice.screens.RenderObject;
 import com.intel.amf.dice.screens.Renderer;
 import com.intel.amf.dice.screens.game.GameWorld;
 
-public class Dice extends RenderObject {
+public class Dice extends RenderObject implements Constants {
   protected int _value;
   public int _targetx;
   public int _targety;
@@ -40,8 +41,8 @@ public class Dice extends RenderObject {
     _corner = corner;
     _bezierStartx = new int[]{400, 400, 800, 400};
     _bezierStarty = new int[]{400, 400, 800, 800};
-    _cornerx = new int[]{0 * 128 + 45, 9 * 128 + 45, 0 * 128 + 45, 9 * 128 + 45};
-    _cornery = new int[]{0 * 128 + 45, 0 * 128 + 45, 4 * 128 + 45, 4 * 128 + 45};
+    _cornerx = new int[]{0 * TILE_SIZE + CORNER_DICE_OFFSET, 9 * TILE_SIZE + CORNER_DICE_OFFSET, 0 * TILE_SIZE + CORNER_DICE_OFFSET, 9 * TILE_SIZE + CORNER_DICE_OFFSET};
+    _cornery = new int[]{0 * TILE_SIZE + CORNER_DICE_OFFSET, 0 * TILE_SIZE + CORNER_DICE_OFFSET, 4 * TILE_SIZE + CORNER_DICE_OFFSET, 4 * TILE_SIZE + CORNER_DICE_OFFSET};
     _position.x = _cornerx[_corner];
     _position.y = _cornery[_corner];
     

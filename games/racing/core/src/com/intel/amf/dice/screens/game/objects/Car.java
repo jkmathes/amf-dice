@@ -1,7 +1,5 @@
 package com.intel.amf.dice.screens.game.objects;
 
-import java.util.Random;
-
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.intel.amf.dice.AssetLoader;
 import com.intel.amf.dice.screens.RenderObject;
@@ -36,15 +34,7 @@ public class Car extends RenderObject {
   }
 
   @Override
-  protected void updateObject(float delta) {
-    if(inMotion() == false) {
-      Random r = new Random();
-      int value = r.nextInt(100) + 1;
-      if(value > 95) {
-      _w.roll(_carIndex);
-      }
-    }
-    
+  protected void updateObject(float delta) {    
     _counter += delta;
     if(_counter < 0.015) {
       return;
