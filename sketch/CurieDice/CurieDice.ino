@@ -54,6 +54,10 @@
 #define SERIAL_PRINTLN(...)
 #endif
 
+unsigned long ledLapse;
+uint8_t ledState = LOW;
+
+#define VIBE_PIN        7
 // ************* NeoPixel ********************************************
 #define PIXEL_PIN       6     // Where the NeoPixel DIN pin is connected
 #define NUMPIXELS       8     // Number of LEDS on NeoPixel
@@ -69,7 +73,9 @@ void dispLed(int mask, int color, int dlay) {
     if (mask&(1<<i)) pixels.setPixelColor(i,c);
   }
   pixels.show();
+  delay(10);
   pixels.show();  // 2nd time helps fix a bug with bright LED0 issue.
+  delay(10);
   delay(dlay);
 }
 
@@ -117,8 +123,20 @@ int16_t imuRead() {
       stillBegin = millis();
       stillMillis = 1;
     }
-    else
+    else {
       stillMillis = millis() - stillBegin;
+      if (stillMillis > 250) {
+        int a = vraw[0]>>8;
+        int b = vraw[1]>>8;
+        int c = vraw[2]>>8;
+        if (a>0x1d && a<0x3d && b>-10 && b<13 && c>0x12 && c<0x32) dispLed(0x1,0x0f0, 30);
+        else if (a>0x13 && a<0x37 && b>-13 && b<13 && c>(signed char)0xb3 && c<(signed char)0xd6) dispLed(0x3, 0x0f0, 30);
+        else if (a>(signed char)0xee && a<10 && b>(signed char)0xb1 && b<(signed char)0xd1 && c>(signed char)0xe6 && c<10) dispLed(0x7, 0x0f0, 30);
+        else if (a>(signed char)0xed && a<10 && b>0x30 && b<0x50 && c>(signed char)0xeb && c<10) dispLed(0x17, 0x0f0, 30);
+        else if (a>(signed char)0xc5 && a<(signed char)0xe0 && b>-10 && b<10 && c>0x1a && c<0x36) dispLed(0x37, 0x0f0, 30);
+        else if (a>(signed char)0xbb && a<(signed char)0xdb && b>-10 && b<10 && c>(signed char)0xbb && c<(signed char)0xdb) dispLed(0x77, 0x0f0, 30);
+      }
+    }
   }
   else stillMillis=0;
   
@@ -126,10 +144,22 @@ int16_t imuRead() {
   SERIAL_PRINT("\t");
   
   SERIAL_PRINTLN(stillMillis);
-  
-  dispLed(0xff, 0x000, 0);
-  dispLed(mask, 0x00f, 0);
 
+  if (stillMillis <=250) {
+    dispLed(0xff, 0x000, 0);
+    dispLed(mask, 0x00f, 0);
+  }
+
+  if (movement > 64)
+  {
+    digitalWrite(VIBE_PIN,1);
+    delay(50);
+    digitalWrite(VIBE_PIN,0);
+    delay(50);
+    digitalWrite(VIBE_PIN,1);
+    delay(50);
+    digitalWrite(VIBE_PIN,0);
+  }
   return movement;
 }
 
@@ -138,6 +168,9 @@ const int ledPin = 13;      // activity LED pin
 boolean blinkState = false; // state of the LED
 // ************* setup **************************************************
 void setup() {
+  pinMode(VIBE_PIN, OUTPUT);
+  digitalWrite(VIBE_PIN,0);
+  
   pixels.begin();
   pixels.show();
   dispLed(0xff, 0x0, 0);        // all off
@@ -247,6 +280,7 @@ void setup() {
 
   dispLed(0x02, 0x0f0, 0);      // 1 - green IMU setup done
 
+  ledLapse = millis();
 }
 
 void atten(int16_t *a, int len, int shiftBy)
@@ -286,5 +320,12 @@ void loop() {
     vraw[8] = diceId;
     vraw[9] = nextSeqNum();
     batteryLevelChar.setValue((unsigned char*) vraw, 20);
+  }
+
+  if ((millis()-ledLapse) > 1000) {
+    ledLapse = millis();
+    ledState = !ledState;
+    digitalWrite(13,ledState);
+      //digitalWrite(VIBE_PIN,ledState);
   }
 }
