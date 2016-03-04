@@ -14,13 +14,15 @@ BLEUnsignedCharCharacteristic diceRollCharacteristic("0x2AC5", BLERead | BLEWrit
 // org.bluetooth.characteristic.user_control_point
 BLEUnsignedCharCharacteristic diceCommandCharacteristic("0x2A9F", BLERead | BLEWrite | BLENotify);
 
-int diceID = 3;
+int diceID;
 unsigned long last = millis();
 
 void setup() {
-  delay(5000);
-  pinMode(13, OUTPUT);
-
+  /**
+   * Identify diceID based on jumper
+   */
+  diceID = 3;
+  
   blePeripheral.setLocalName("CurieDice");
   blePeripheral.setAdvertisedServiceUuid(diceService.uuid());
   blePeripheral.addAttribute(diceService);
@@ -40,6 +42,10 @@ void loop() {
   if(central) {
     while(central.connected()) {
       blePeripheral.poll();
+
+      /**
+       * This simulates a roll every 5 seconds
+       */
       unsigned long now = millis();
       if(now - last > (5 * 1000)) {
         last = now;
@@ -53,12 +59,21 @@ void roll(int value) {
   diceRollCharacteristic.setValue((diceID << 4) | value);
 }
 
+/**
+ * Handle commands coming from the server
+ */
 void commandHandler(BLECentral &central, BLECharacteristic &characteristic) {  
 }
 
+/**
+ * On connect
+ */
 void blePeripheralConnectHandler(BLECentral &central) {
 }
 
+/**
+ * On disconnect
+ */
 void blePeripheralDisconnectHandler(BLECentral &central) {
 }
 
