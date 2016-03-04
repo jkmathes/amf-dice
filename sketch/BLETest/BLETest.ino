@@ -62,7 +62,8 @@ void roll(int value) {
 /**
  * Handle commands coming from the server
  */
-void commandHandler(BLECentral &central, BLECharacteristic &characteristic) {  
+void commandHandler(BLECentral &central, BLECharacteristic &characteristic) {
+  int cvalue = diceCommandCharacteristic.value();
 }
 
 /**
