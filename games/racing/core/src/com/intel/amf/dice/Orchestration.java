@@ -37,7 +37,7 @@ public class Orchestration {
   
   private void fetchWork() {
     HttpRequest get = new HttpRequest(HttpMethods.GET);
-    get.setUrl("http://localhost:3000");
+    get.setUrl("http://localhost:8000");
     _pending = true;
     
     Gdx.net.sendHttpRequest(get, new HttpResponseListener() {
