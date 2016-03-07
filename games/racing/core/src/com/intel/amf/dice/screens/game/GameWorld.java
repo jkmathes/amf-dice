@@ -4,12 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.JsonValue;
 import com.intel.amf.dice.Constants;
 import com.intel.amf.dice.Orchestration;
 import com.intel.amf.dice.Orchestration.WorkHandler;
@@ -33,6 +32,8 @@ public class GameWorld extends World implements Constants {
   
   protected Orchestration _orch;
   protected HashMap<String, WorkHandler>  _handlers;
+  
+  protected HashMap<Integer, GridPoint2> _projectionOffsets;
 
   public GameWorld(float gameHeight) {
     super();
@@ -42,6 +43,16 @@ public class GameWorld extends World implements Constants {
     _createdObjects = new ArrayList<RenderObject>();
     _gameHeight = (int)gameHeight;
     _init = true;
+    
+    _projectionOffsets = new HashMap<Integer, GridPoint2>(); 
+    _projectionOffsets.put(0, new GridPoint2(0, -PROJECTION_SIZE));
+    _projectionOffsets.put(45, new GridPoint2(PROJECTION_SIZE, -PROJECTION_SIZE));
+    _projectionOffsets.put(90, new GridPoint2(PROJECTION_SIZE, 0));
+    _projectionOffsets.put(135, new GridPoint2(PROJECTION_SIZE, PROJECTION_SIZE));
+    _projectionOffsets.put(180, new GridPoint2(0, PROJECTION_SIZE));
+    _projectionOffsets.put(225, new GridPoint2(-PROJECTION_SIZE, PROJECTION_SIZE));
+    _projectionOffsets.put(270, new GridPoint2(-PROJECTION_SIZE, 0));
+    _projectionOffsets.put(-45, new GridPoint2(-PROJECTION_SIZE, -PROJECTION_SIZE));
     
     _map[0] = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     _map[1] = new int[]{0, 4, 3, 3, 1, 3, 3, 3, 5, 0};
@@ -143,6 +154,10 @@ public class GameWorld extends World implements Constants {
     _createdObjects.add(ro);
   }
 
+  public GridPoint2 getProjectionOffset(int r) {
+    return _projectionOffsets.get(r);
+  }
+  
   public void update(float delta) {
     if(delta >= 0.15f) {
       delta = 0.15f;
@@ -150,17 +165,12 @@ public class GameWorld extends World implements Constants {
 
     if(_orch.hasWork()) {
       String msg = _orch.getWork();
-      try {
-        if(msg == null || msg.length() == 0) {
-          System.err.println("Unable to connect to dice bridge");
-        }
-        else {
-          JSONObject j = new JSONObject(msg);
-          parseMessage(j);
-        }
+      if(msg == null || msg.length() == 0) {
+        System.err.println("Unable to connect to dice bridge");
       }
-      catch(JSONException e) {
-        e.printStackTrace();
+      else {
+        JsonValue j = new JsonReader().parse(msg);
+        parseMessage(j);
       }
     }
     
@@ -208,29 +218,19 @@ public class GameWorld extends World implements Constants {
     _handlers.put("roll", new WorkHandler() {
 
       @Override
-      public void handle(JSONObject j) {
-        try {
-          int carIndex = j.getInt("dice");
-          int value = j.getInt("value");
-          roll(carIndex, value);
-        }
-        catch(JSONException e) {
-          e.printStackTrace();
-        }
+      public void handle(JsonValue j) {
+        int carIndex = j.getInt("dice");
+        int value = j.getInt("value");
+        roll(carIndex, value);
       }
     });
   }
   
-  public void parseMessage(JSONObject j) { 
-    try {
-      String type = j.getString("type");
-      JSONObject payload = j.getJSONObject("payload");
-      if(type != null && payload != null) {
-        _handlers.get(type).handle(payload);
-      }
-    }
-    catch(JSONException e) {
-      e.printStackTrace();
+  public void parseMessage(JsonValue j) {
+    String type = j.getString("type");
+    JsonValue payload = j.get("payload");
+    if(type != null && payload != null) {
+      _handlers.get(type).handle(payload);
     }
   }
   

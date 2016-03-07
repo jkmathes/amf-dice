@@ -1,12 +1,14 @@
 package com.intel.amf.dice.screens.game.objects;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.GridPoint2;
 import com.intel.amf.dice.AssetLoader;
+import com.intel.amf.dice.Constants;
 import com.intel.amf.dice.screens.RenderObject;
 import com.intel.amf.dice.screens.Renderer;
 import com.intel.amf.dice.screens.game.GameWorld;
 
-public class Car extends RenderObject {
+public class Car extends RenderObject implements Constants {
   protected float _rot;
   protected int _pathIndex;
   protected int _lastX;
@@ -16,7 +18,6 @@ public class Car extends RenderObject {
   protected boolean _go;
   protected int _carIndex;
   protected GameWorld _w;
-  public static int [] PATH_OFFSETS = new int[]{-30, -15, 0, 15};
   
   public Car(GameWorld w, int x, int y, int width, int height, int carIndex) {
     super(w);
@@ -49,7 +50,7 @@ public class Car extends RenderObject {
     if(_pathIndex > ((GameWorld)_world).getPath().size() - 1) {
       _pathIndex = 0;
     }
-    _position = ((GameWorld)_world).getPath().get(_pathIndex);
+    _position = ((GameWorld)_world).getPath().get(_pathIndex).cpy(); 
     
     int deltaX = (int)_position.x - _lastX;
     int deltaY = (int)_position.y - _lastY;
@@ -83,6 +84,27 @@ public class Car extends RenderObject {
     
     _lastX = (int)_position.x;
     _lastY = (int)_position.y;
+    
+    GridPoint2 mod = ((GameWorld)_world).getProjectionOffset((int)_rot);
+    
+    int modx = mod.x * _carIndex + mod.x;
+    int mody = mod.y * _carIndex + mod.y;
+    
+    if(mod.x > 0) {
+      modx -= (PROJECTION_SIZE * 2 + (PROJECTION_SIZE / 2));
+    }
+    else if(mod.x < 0) {
+      modx += (PROJECTION_SIZE * 2 + (PROJECTION_SIZE / 2));
+    }
+    if(mod.y > 0) {
+      mody -= (PROJECTION_SIZE * 2 + (PROJECTION_SIZE / 2));
+    }
+    else if(mod.y < 0) {
+      mody += (PROJECTION_SIZE * 2 + (PROJECTION_SIZE / 2));
+    }
+    
+    _position.x += modx;
+    _position.y += mody;
   }
 
   public void incrementPathIndex(int inc) {

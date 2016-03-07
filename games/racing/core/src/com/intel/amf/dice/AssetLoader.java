@@ -4,7 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 
 public class AssetLoader {
   public static TextureRegion [] _sprites;
@@ -15,6 +18,8 @@ public class AssetLoader {
   public static TextureRegion _backrock;
   public static TextureRegion [] _cars; 
   public static TextureRegion _logo;
+  public static TextureRegion _amf;
+  public static BitmapFont _font;
   
   public static void load() {
     _sprites = new TextureRegion[Constants.SPRITES_NEEDED.length];
@@ -74,9 +79,15 @@ public class AssetLoader {
     
     t = new Texture(Gdx.files.internal("intel-logo.png"));
     t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-    tr = new TextureRegion(t, 0, 0, 2000, 1324);
+    tr = new TextureRegion(t, 0, 0, 309, 206);
     tr.flip(false, true);
     _logo = tr;
+    
+    t = new Texture(Gdx.files.internal("amf.png"));
+    t.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+    tr = new TextureRegion(t, 0, 0, 411, 66);
+    tr.flip(false, true);
+    _amf = tr;
     
     _diceWhite = new TextureRegion[6];
     for(int f = 0; f < 6; f++) {
@@ -95,6 +106,11 @@ public class AssetLoader {
       tr.flip(false, true);
       _diceBlue[f] = tr;
     }
+    
+    FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ClearSans-Regular.ttf"));
+    FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+    parameter.size = 12;
+    _font = generator.generateFont(parameter);
   }
   
   public static void dispose() {

@@ -77,7 +77,6 @@ project(":core") {
         compile "net.dermetfan.libgdx-utils:libgdx-utils:0.13.2"
         compile "io.socket:socket.io-client:0.7.0"
         compile "org.json:json:20090211"
-        compile "com.github.movisens:SmartGattLib:1.7"
     }
 }
 

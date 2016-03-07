@@ -1,12 +1,11 @@
 package com.intel.amf.dice;
 
-import org.json.JSONObject;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net.HttpMethods;
 import com.badlogic.gdx.Net.HttpRequest;
 import com.badlogic.gdx.Net.HttpResponse;
 import com.badlogic.gdx.Net.HttpResponseListener;
+import com.badlogic.gdx.utils.JsonValue;
 
 public class Orchestration {
   protected boolean _pending;
@@ -62,6 +61,6 @@ public class Orchestration {
   }
   
   public static interface WorkHandler {
-    public void handle(JSONObject j);
+    public void handle(JsonValue j);
   }
 }

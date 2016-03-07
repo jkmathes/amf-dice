@@ -12,6 +12,7 @@ public interface Constants {
 
   public static int TILE_SIZE = 128;
   public static int CORNER_DICE_OFFSET = 45;
+  public static int PROJECTION_SIZE = 20;
   
   //                                                    Grass Start Vert  Horiz UL    UR    LL    LR
   //                                                    0     1     2     3     4     5     6     7
