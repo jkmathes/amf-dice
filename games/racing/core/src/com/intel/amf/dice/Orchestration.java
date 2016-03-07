@@ -37,6 +37,7 @@ public class Orchestration {
   
   private void fetchWork() {
     HttpRequest get = new HttpRequest(HttpMethods.GET);
+    get.setTimeOut(5000);
     get.setUrl("http://localhost:8000");
     _pending = true;
     

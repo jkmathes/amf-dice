@@ -151,8 +151,13 @@ public class GameWorld extends World implements Constants {
     if(_orch.hasWork()) {
       String msg = _orch.getWork();
       try {
-        JSONObject j = new JSONObject(msg);
-        parseMessage(j);
+        if(msg == null || msg.length() == 0) {
+          System.err.println("Unable to connect to dice bridge");
+        }
+        else {
+          JSONObject j = new JSONObject(msg);
+          parseMessage(j);
+        }
       }
       catch(JSONException e) {
         e.printStackTrace();
