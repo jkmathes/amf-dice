@@ -81,18 +81,19 @@ void dispLed(int mask, int color, int dlay) {
 
 // ************* BLE **************************************************
 BLEPeripheral blePeripheral;        // BLE Peripheral Device (the board you're programming)
-BLEService batteryService("180F");  // BLE Service
-BLECharacteristic batteryLevelChar( // BLE Characteristic
-  "2A19",                 // standard 16-bit characteristic UUID
-  BLERead | BLENotify,    // remote clients can get notifications if characteristic changes
-  20);                    // payload size
+BLEService diceService("0x1812");  // BLE Service
+BLEUnsignedCharCharacteristic diceRollCharacteristic("0x2AC5", BLERead|BLEWrite|BLENotify);//20); // payload size
+BLEUnsignedCharCharacteristic diceCommandCharacteristic("0x2A9F", BLERead|BLEWrite|BLENotify);
+
 boolean gConnect = false;
-int16_t   diceId = 1;
+//int16_t   diceId = 1;
+unsigned char diceId = 1;
 uint16_t  seqNum = 0;
 uint16_t nextSeqNum() {
   seqNum++;
   return seqNum;
 }
+bool rollSent = false;
 
 // ************* IMU **************************************************
 int16_t vraw[10]; // raw readings from IMU and info for sending via BLE
@@ -122,6 +123,7 @@ int16_t imuRead() {
     if (stillMillis==0) {
       stillBegin = millis();
       stillMillis = 1;
+      rollSent = false;
     }
     else {
       stillMillis = millis() - stillBegin;
@@ -129,12 +131,24 @@ int16_t imuRead() {
         int a = vraw[0]>>8;
         int b = vraw[1]>>8;
         int c = vraw[2]>>8;
-        if (a>0x1d && a<0x3d && b>-10 && b<13 && c>0x12 && c<0x32) dispLed(0x1,0x0f0, 30);
-        else if (a>0x13 && a<0x37 && b>-13 && b<13 && c>(signed char)0xb3 && c<(signed char)0xd6) dispLed(0x3, 0x0f0, 30);
-        else if (a>(signed char)0xee && a<10 && b>(signed char)0xb1 && b<(signed char)0xd1 && c>(signed char)0xe6 && c<10) dispLed(0x7, 0x0f0, 30);
-        else if (a>(signed char)0xed && a<10 && b>0x30 && b<0x50 && c>(signed char)0xeb && c<10) dispLed(0x17, 0x0f0, 30);
-        else if (a>(signed char)0xc5 && a<(signed char)0xe0 && b>-10 && b<10 && c>0x1a && c<0x36) dispLed(0x37, 0x0f0, 30);
-        else if (a>(signed char)0xbb && a<(signed char)0xdb && b>-10 && b<10 && c>(signed char)0xbb && c<(signed char)0xdb) dispLed(0x77, 0x0f0, 30);
+        unsigned char roll=0;
+        if (a>0x1d && a<0x3d && b>-10 && b<13 && c>0x12 && c<0x32)
+          {roll=1; dispLed(0x1,0x0f0, 30);}
+        else if (a>0x13 && a<0x37 && b>-13 && b<13 && c>(signed char)0xb3 && c<(signed char)0xd6)
+          {roll=2; dispLed(0x3, 0x0f0, 30);}
+        else if (a>(signed char)0xee && a<10 && b>(signed char)0xb1 && b<(signed char)0xd1 && c>(signed char)0xe6 && c<10)
+          {roll=3; dispLed(0x7, 0x0f0, 30);}
+        else if (a>(signed char)0xed && a<10 && b>0x30 && b<0x50 && c>(signed char)0xeb && c<10)
+          {roll=4; dispLed(0x17, 0x0f0, 30);}
+        else if (a>(signed char)0xc5 && a<(signed char)0xe0 && b>-10 && b<10 && c>0x1a && c<0x36)
+          {roll=5; dispLed(0x37, 0x0f0, 30);}
+        else if (a>(signed char)0xbb && a<(signed char)0xdb && b>-10 && b<10 && c>(signed char)0xbb && c<(signed char)0xdb)
+          {roll=6; dispLed(0x77, 0x0f0, 30);}
+        if (roll!=0 && !rollSent)
+        {
+          diceRollCharacteristic.setValue((diceId << 4) | roll);
+          rollSent = true;
+        }
       }
     }
   }
@@ -189,16 +203,17 @@ void setup() {
      and can be used by remote devices to identify this BLE device
      The name can be changed but maybe be truncated based on space left in advertisement packet */
   blePeripheral.setLocalName("CurieDice");
-  blePeripheral.setAdvertisedServiceUuid(batteryService.uuid());  // add the service UUID
-  blePeripheral.addAttribute(batteryService);   // Add the BLE Battery service
-  blePeripheral.addAttribute(batteryLevelChar); // add the battery level characteristic
+  blePeripheral.setAdvertisedServiceUuid(diceService.uuid());
+  blePeripheral.addAttribute(diceService);
+  blePeripheral.addAttribute(diceCommandCharacteristic);
+  blePeripheral.addAttribute(diceRollCharacteristic);
   blePeripheral.setEventHandler(BLEConnected, connectHandler);
   blePeripheral.setEventHandler(BLEDisconnected, disconnectHandler);
-  batteryLevelChar.setValue((unsigned char *)vraw,20);   // initial value for this characteristic
+  diceCommandCharacteristic.setEventHandler(BLEWritten, commandHandler);
+    
+  //diceRollCharacteristic.setValue((unsigned char *)vraw,20);
 
-  /* Now activate the BLE device.  It will start continuously transmitting BLE
-     advertising packets and will be visible to remote BLE central devices
-     until it receives a new connection */
+
   blePeripheral.begin();
   SERIAL_PRINTLN("Bluetooth device active, waiting for connections...");
 
@@ -302,9 +317,14 @@ void connectHandler(BLECentral& central)
 
 void disconnectHandler(BLECentral& central)
 {
-  SERIAL_PRINT("Disconnected from central: ");
   gConnect = false;
+  SERIAL_PRINT("Disconnected from central: ");
   digitalWrite(13, LOW);  
+}
+
+void commandHandler(BLECentral &central, BLECharacteristic &characteristic)
+{
+  int cmd = diceCommandCharacteristic.value();
 }
 
 void loop() {
@@ -312,16 +332,17 @@ void loop() {
 
   imuRead();
     
-  if (gConnect) {
-    SERIAL_PRINT("Sending: ");
-    vraw[6] = (int16_t) movement;
-    int16_t stillDur = (stillMillis>32000)? 32000 : stillMillis;
-    vraw[7] = stillDur;
-    vraw[8] = diceId;
-    vraw[9] = nextSeqNum();
-    batteryLevelChar.setValue((unsigned char*) vraw, 20);
-  }
+  //if (gConnect) {
+  //  SERIAL_PRINT("Sending: ");
+  //  vraw[6] = (int16_t) movement;
+  //  int16_t stillDur = (stillMillis>32000)? 32000 : stillMillis;
+  //  vraw[7] = stillDur;
+  //  vraw[8] = diceId;
+  //  vraw[9] = nextSeqNum();
+  //  diceRollCharacteristic.setValue((unsigned char*) vraw, 20);
+  //}
 
+  delay(50);
   if ((millis()-ledLapse) > 1000) {
     ledLapse = millis();
     ledState = !ledState;
