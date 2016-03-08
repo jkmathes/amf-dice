@@ -35,7 +35,7 @@ public class GameRenderer extends Renderer implements Constants {
     _shapeRenderer = new ShapeRenderer();
     _shapeRenderer.setProjectionMatrix(_camera.combined);
     _gameHeight = gameHeight;
-    //_font = AssetLoader._gameFont;
+    _font = AssetLoader._font;
     //_font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
     _fontHeight = FONT_HEIGHT * FONT_SCALE;
     _fontWidth = FONT_WIDTH * FONT_SCALE;
@@ -97,11 +97,11 @@ public class GameRenderer extends Renderer implements Constants {
     if(c != null) {
       _font.setColor(c);
     }
-    //float scale = _font.getScaleX();
+    float scale = _font.getScaleX();
     //_font.setScale(FONT_SCROLL_SCALE);
-    //_font.drawWrapped(_batcher, s, x, y, wrapWidth, BitmapFont.HAlignment.CENTER);
+    _font.draw(_batcher, s, x, y);
     //_font.setScale(scale);
-    //_font.setColor(cc);
+    _font.setColor(cc);
   }
 
   protected void drawBackground(float delta) {
@@ -124,6 +124,8 @@ public class GameRenderer extends Renderer implements Constants {
     _batcher.draw(AssetLoader._logo, 490, 412, 0, 0, 300, 200, 1.0f, 1.0f, 0f);
     _batcher.draw(AssetLoader._amf, 435, 22);
     //_batcher.draw(AssetLoader._logo, 4 * 128, 2 * 128 + 20, 0, 0, 104, 70, 1.0f, 1.0f, 0f);
+    //AssetLoader._font.draw(_batcher, "Test321", 5 * 128, 5 * 128 - 20);
+    drawText("Test321", 5 * 128, 5 * 128 - 20, Color.YELLOW, 10);
     _batcher.end();
   }
   

@@ -72,7 +72,7 @@ var r = {
     r.express = require('express');
     r.app = r.express();
     r.pendingResponse = null;
-    r.app.get('/', function(req, res) {
+    r.app.get('/work', function(req, res) {
       if(r.pendingRolls.length > 0) {
         var dr = r.pendingRolls.shift();
         r.respondRoll(res, dr);
@@ -94,7 +94,7 @@ var r = {
     }, 1000);
 
     r.app.listen(port, function() {
-      console.log('Listening for dice comms on port 8000');
+      console.log('Listening for dice comms on port ' + port);
     });
   }
 };

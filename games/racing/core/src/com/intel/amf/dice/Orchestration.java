@@ -36,8 +36,7 @@ public class Orchestration {
   
   private void fetchWork() {
     HttpRequest get = new HttpRequest(HttpMethods.GET);
-    get.setTimeOut(5000);
-    get.setUrl("http://localhost:8000");
+    get.setUrl(_url);
     _pending = true;
     
     Gdx.net.sendHttpRequest(get, new HttpResponseListener() {
@@ -50,6 +49,7 @@ public class Orchestration {
 
       @Override
       public void failed(Throwable t) {
+        _msg = null;
         _pending = false;
       }
 
