@@ -1,0 +1,14 @@
+{
+  "name": "stats",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jkmathes",
+  "dependencies": {
+    "express": "^4.13.4",
+    "parse-server": "^2.1.4"
+  }
+}
