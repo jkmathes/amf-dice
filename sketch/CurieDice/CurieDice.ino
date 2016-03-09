@@ -132,7 +132,7 @@ int16_t imuRead() {
   movement = 0;
 
   for (int i=0; i<6; i++) {
-    int m = (abs(vprev[i]-vraw[i])) >> 8;
+    int m = (abs(vprev[i]-vraw[i])) >> 9;
     if (m>movement) movement = m;
     if (maxMove[i]==0 && m>MOVE_THRESHOLD) { maxMove[i]=m; moves++;}
   }
