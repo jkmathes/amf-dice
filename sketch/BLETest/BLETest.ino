@@ -14,10 +14,28 @@ BLEUnsignedCharCharacteristic diceRollCharacteristic("0x2AC5", BLERead | BLEWrit
 // org.bluetooth.characteristic.user_control_point
 BLEUnsignedCharCharacteristic diceCommandCharacteristic("0x2A9F", BLERead | BLEWrite | BLENotify);
 
-int diceID;
-unsigned long last = millis();
+/**
+ * Commands for the dice to emit and recv
+ */
+#define COMMAND_REGISTER 1
+#define COMMAND_REGISTER_ACK 2
+#define COMMAND_LED_ON 3
+#define COMMAND_LED_OFF 4
 
-void setup() {
+/**
+ * Dice identifier - set later via the command header
+ */
+int diceID;
+
+/**
+ * Whether or not this dice is yet registered with the command server
+ */
+boolean registered = false;
+
+unsigned long last = millis();
+boolean led = false;
+
+void setup() {  
   /**
    * Identify diceID based on jumper
    */
@@ -39,8 +57,13 @@ void setup() {
 
 void loop() {
   BLECentral central = blePeripheral.central();
+  registered = false;
   if(central) {
     while(central.connected()) {
+      if(!registered) {
+        registerDice();
+      }
+      
       blePeripheral.poll();
 
       /**
@@ -50,7 +73,15 @@ void loop() {
       if(now - last > (5 * 1000)) {
         last = now;
         roll(random(1, 7));
-      }    
+      }
+
+
+      if(led) {
+        digitalWrite(13, HIGH);
+      }
+      else {
+        digitalWrite(13, LOW);
+      }
     }
   }
 }
@@ -59,11 +90,25 @@ void roll(int value) {
   diceRollCharacteristic.setValue((diceID << 4) | value);
 }
 
+void registerDice() {
+  diceCommandCharacteristic.setValue((diceID << 4) | COMMAND_REGISTER);
+}
+
 /**
  * Handle commands coming from the server
  */
 void commandHandler(BLECentral &central, BLECharacteristic &characteristic) {
   int cvalue = diceCommandCharacteristic.value();
+
+  if(cvalue == COMMAND_LED_ON) {
+    led = true;
+  }
+  else if(cvalue == COMMAND_LED_OFF) {
+    led = false;
+  }
+  else if(cvalue == COMMAND_REGISTER_ACK) {
+    registered = true;
+  }
 }
 
 /**
