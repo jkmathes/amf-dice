@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.intel.amf.dice.AssetLoader;
@@ -106,6 +107,9 @@ public class GameRenderer extends Renderer implements Constants {
 
     drawBackground(delta);
 
+    Gdx.gl.glEnable(GL20.GL_BLEND);
+    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    _shapeRenderer.setProjectionMatrix(_camera.combined);
     for(RenderObject ro : _world.getObjects()) {
       if(ro.isShape()) {
         ro.renderShape(_shapeRenderer);
@@ -142,8 +146,8 @@ public class GameRenderer extends Renderer implements Constants {
    * @param y the y coordinate for the font drawing
    */
   @Override
-  public void drawText(String s, float x, float y) {
-    drawText(s, x, y, null, GAME_WIDTH);
+  public GlyphLayout drawText(String s, float x, float y) {
+    return drawText(s, x, y, null, GAME_WIDTH);
   }
 
   /**
@@ -155,13 +159,14 @@ public class GameRenderer extends Renderer implements Constants {
    * @param wrapWidth the width at which to wrap the text
    */
   @Override
-  public void drawText(String s, float x, float y, Color c, float wrapWidth) {
+  public GlyphLayout drawText(String s, float x, float y, Color c, float wrapWidth) {
     Color cc = _font.getColor();
     if(c != null) {
       _font.setColor(c);
     }
-    _font.draw(_batcher, s, x, y);
+    GlyphLayout gl = _font.draw(_batcher, s, x, y);
     _font.setColor(cc);
+    return gl;
   }
 
   /**

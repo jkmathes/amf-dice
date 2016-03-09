@@ -1,6 +1,8 @@
 package com.intel.amf.dice;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -18,8 +20,15 @@ public class AssetLoader {
   public static TextureRegion _logo;
   public static TextureRegion _amf;
   public static BitmapFont _font;
+  public static Music _music;
+  public static Sound _signal;
+  public static Sound _go;
   
   public static void load() {
+    _music = Gdx.audio.newMusic(Gdx.files.internal("music.mp3"));
+    _signal = Gdx.audio.newSound(Gdx.files.internal("signal.wav"));
+    _go = Gdx.audio.newSound(Gdx.files.internal("go.wav"));
+    
     _sprites = new TextureRegion[Constants.SPRITES_NEEDED.length];
     String root = "sprites/images/Car-Racing-Game-Tileset_";
     for(int f = 0; f < Constants.SPRITES_NEEDED.length; f++) {

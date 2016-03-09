@@ -61,7 +61,7 @@ public class Dice extends RenderObject implements Constants {
     
     if(Math.abs(_position.x - _targetx) < 20 && Math.abs(_position.y - _targety) < 20) {
       _live = false;
-      _car.go();
+      _car.go(true);
       _cornerDice.setSpinning(true);
     }
   }

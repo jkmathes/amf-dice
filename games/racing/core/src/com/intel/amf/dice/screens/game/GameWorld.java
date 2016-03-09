@@ -6,19 +6,27 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.SerializationException;
+import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.Timer.Task;
 import com.intel.amf.dice.Constants;
 import com.intel.amf.dice.Orchestration;
 import com.intel.amf.dice.Orchestration.WorkHandler;
 import com.intel.amf.dice.Singleton;
 import com.intel.amf.dice.screens.RenderObject;
+import com.intel.amf.dice.screens.ShapeObject;
 import com.intel.amf.dice.screens.World;
+import com.intel.amf.dice.screens.game.objects.Banner;
 import com.intel.amf.dice.screens.game.objects.Car;
+import com.intel.amf.dice.screens.game.objects.Countdown;
 import com.intel.amf.dice.screens.game.objects.Dice;
+import com.intel.amf.dice.screens.game.objects.Overlay;
 import com.intel.amf.dice.screens.game.objects.SpinningDice;
+import com.intel.amf.dice.screens.game.objects.StartBanner;
 
 /**
  * A controller for the racing game
@@ -74,6 +82,22 @@ public class GameWorld extends World implements Constants {
    * to not overlap and create unique "lanes"
    */
   protected HashMap<Integer, GridPoint2> _projectionOffsets;
+  /**
+   * Whether or not the current game has completed
+   */
+  protected boolean _gameOver;
+  /**
+   * The winning car, when the game is over
+   */
+  protected int _winner;
+  /**
+   * Whether or not we have begun the game over fade
+   */
+  protected boolean _gameOverFadeBegin;
+  protected ShapeObject _overlay;
+  protected boolean _countdown;
+  protected boolean _beginGame;
+  protected StartBanner _startBanner;
   
   public GameWorld(float gameHeight) {
     super();
@@ -83,6 +107,7 @@ public class GameWorld extends World implements Constants {
     _createdObjects = new ArrayList<RenderObject>();
     _gameHeight = (int)gameHeight;
     _init = true;
+    _countdown = true;
     
     /**
      * Create a mapping between the angle of the car and the 
@@ -151,6 +176,17 @@ public class GameWorld extends World implements Constants {
   }
   
   /**
+   * Indicate that a car has finished the track path
+   * @param carIndex the car which has completed the track
+   */
+  public void setFinished(int carIndex) {
+    if(_gameOver == false) {
+      _gameOver = true;
+      _winner = carIndex;
+    }
+  }
+  
+  /**
    * Update the entire game world
    * 
    * @param delta the time difference between the last frame and the current frame
@@ -163,6 +199,28 @@ public class GameWorld extends World implements Constants {
       delta = 0.15f;
     }
 
+    if(_gameOver) {
+      if(_gameOverFadeBegin) {
+      }
+      else {
+        _gameOverFadeBegin = true;
+        _overlay = new Overlay(this, 0, 0, GAME_WIDTH, _gameHeight);
+        addObject(_overlay);
+        _cars[_winner].go(false);
+        _cars[_winner].win();
+        addObject(new Banner(this, _winner));
+        _objects.remove(_cars[_winner]);
+        _objects.add(_cars[_winner]);
+        Timer.schedule(new Task() {
+
+          @Override
+          public void run() {
+            Singleton.getInstance().getGame().setScreen(new GameScreen(Singleton.getInstance().getGame()));
+          }
+        }, 7f);
+      }
+    }
+    
     /**
      * If there is work from the server, get it, translate to JSON, and
      * process the work
@@ -190,9 +248,19 @@ public class GameWorld extends World implements Constants {
       init();
     }
       
+    if(_countdown) {
+      _startBanner = new StartBanner(this, 0, 0, GAME_WIDTH, _gameHeight);
+      addObject(_startBanner);
+      _countdown = false;
+      Countdown cd = new Countdown(this, 3);
+      addObject(cd);
+    }
+
     /*
-    for(int f = 0; f < _cars.length; f++) {
-      roll(f, MathUtils.random(1, 6));
+    if(_beginGame) {
+      for(int f = 0; f < _cars.length; f++) {
+        roll(f, MathUtils.random(1, 6));
+      }
     }
     */
 
@@ -215,6 +283,14 @@ public class GameWorld extends World implements Constants {
     processCreatedObjects();
   }
 
+  public void beginGame() {
+    _beginGame = true;
+  }
+  
+  public StartBanner getStartBanner() {
+    return _startBanner;
+  }
+  
   /**
    * Initialize the objects at the start of 
    * the game world
@@ -292,7 +368,7 @@ public class GameWorld extends World implements Constants {
    * @param value the value of the die
    */
   public void roll(int corner, int value) {
-    if(_cars[corner].inMotion() == false) {
+    if(_cars[corner].inMotion() == false && _beginGame) {
       Dice d = new Dice(this, value, corner);
       d.setTargetPosition(_cars[corner]);
       addObject(d);

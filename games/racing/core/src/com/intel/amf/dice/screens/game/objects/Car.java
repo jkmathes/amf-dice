@@ -18,6 +18,9 @@ public class Car extends RenderObject implements Constants {
   protected boolean _go;
   protected int _carIndex;
   protected GameWorld _w;
+  protected boolean _finished;
+  protected boolean _win;
+  protected float _scale;
   
   public Car(GameWorld w, int x, int y, int width, int height, int carIndex) {
     super(w);
@@ -31,7 +34,10 @@ public class Car extends RenderObject implements Constants {
     _lastX = x - 16;
     _lastY = y;
     _go = false;
+    _win = false;
+    _finished = false;
     _carIndex = carIndex;
+    _scale = 1.0f;
   }
 
   @Override
@@ -43,12 +49,38 @@ public class Car extends RenderObject implements Constants {
     
     _counter = 0;
     
+    if(_win) {
+      if((int)_position.x < (int)((GAME_WIDTH / 2) - (_width / 2))) {
+        _position.x++;
+      }
+      else if((int)_position.x > (int)((GAME_WIDTH / 2) - (_width / 2))) {
+        _position.x--;
+      }
+      if((int)_position.y < (int)((_w.getGameHeight() / 2) - (_height / 2))) {
+        _position.y++;
+      }
+      else if((int)_position.y < (int)((_w.getGameHeight() / 2) - (_height / 2))) {
+        _position.y--;
+      }
+      
+      if(_scale <= 3.0f) {
+        _scale += 0.1f;
+      }
+      else {
+        
+      }
+      
+      return;
+    }
+    
     if(_go && _pathIndex < _targetPathIndex) {
       _pathIndex++;
     }
     
     if(_pathIndex > ((GameWorld)_world).getPath().size() - 1) {
       _pathIndex = 0;
+      _finished = true;
+      _w.setFinished(_carIndex);
     }
     _position = ((GameWorld)_world).getPath().get(_pathIndex).cpy(); 
     
@@ -106,7 +138,7 @@ public class Car extends RenderObject implements Constants {
     _position.x += modx;
     _position.y += mody;
   }
-
+  
   public void incrementPathIndex(int inc) {
     _targetPathIndex = _pathIndex + inc;
   }
@@ -119,12 +151,16 @@ public class Car extends RenderObject implements Constants {
     return false;
   }
   
-  public void go() {
-    _go = true;
+  public void win() {
+    _win = true;
+  }
+  
+  public void go(boolean b) {
+    _go = b;
   }
   
   @Override
   public void render(SpriteBatch sb, Renderer r) {
-    sb.draw(AssetLoader._cars[_carIndex], getX() - (getWidth() / 2), getY() - (getHeight() / 2), getWidth() / 2, getHeight() / 2, getWidth(), getHeight(), 1.0f, 1.0f, _rot);
+    sb.draw(AssetLoader._cars[_carIndex], getX() - (getWidth() / 2), getY() - (getHeight() / 2), getWidth() / 2, getHeight() / 2, getWidth(), getHeight(), _scale, _scale, _rot);
   }
 }

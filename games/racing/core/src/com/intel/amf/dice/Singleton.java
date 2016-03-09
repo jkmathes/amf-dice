@@ -16,6 +16,7 @@ public class Singleton {
    * The URL which hosts the game server
    */
   protected String _gameHost;
+  protected AMFRacing _game;
   
   protected Singleton() {
   }
@@ -49,5 +50,13 @@ public class Singleton {
    */
   public void setGameHost(String url) {
     _gameHost = url;
+  }
+  
+  public AMFRacing getGame() {
+    return _game;
+  }
+  
+  public void setGame(AMFRacing g) {
+    _game = g;
   }
 }
