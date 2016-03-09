@@ -8,11 +8,29 @@ import com.intel.amf.dice.AMFRacing;
 import com.intel.amf.dice.Constants;
 import com.intel.amf.dice.screens.Gestures;
 
+/**
+ * This represents the game screen
+ *  
+ * @author jkmathes
+ */
 public class GameScreen implements Screen {
+  /**
+   * The controller for this game
+   */
   protected GameWorld _world;
+  /**
+   * The view renderer to use
+   */
   protected GameRenderer _renderer;
+  /**
+   * Elapsed time in game
+   */
   protected float _runTime;
 
+  /**
+   * Create a game screen on the current device
+   * @param amfr the game driver requesting this screen
+   */
   public GameScreen(AMFRacing amfr) {
     float screenWidth = Gdx.graphics.getWidth();
     float screenHeight = Gdx.graphics.getHeight();
@@ -47,6 +65,10 @@ public class GameScreen implements Screen {
 
   }
 
+  /**
+   * Render a single frame in the game. This will
+   * update all objects in the world, and render the frame
+   */
   @Override
   public void render(float delta) {
     _runTime += delta;

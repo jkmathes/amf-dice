@@ -39,7 +39,7 @@ void setup() {
   /**
    * Identify diceID based on jumper
    */
-  diceID = 3;
+  diceID = 2;
   
   blePeripheral.setLocalName("CurieDice");
   blePeripheral.setAdvertisedServiceUuid(diceService.uuid());

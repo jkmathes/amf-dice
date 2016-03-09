@@ -379,17 +379,21 @@ void registerDice() {
 
 void loop() {
   BLECentral central = blePeripheral.central();
-  if (central && central.connected() && !registered) {
-    registerDice();
-  }
+  if (central) {
+    while (central.connected()) {
+      if (!registered) {
+        registerDice();
+      }
 
-  imuRead();
-    
-  delay(50);
-  if ((millis()-ledLapse) > 1000) {
-    ledLapse = millis();
-    ledState = !ledState;
-    digitalWrite(13,ledState);
-      //digitalWrite(VIBE_PIN,ledState);
+      blePeripheral.poll();
+
+      imuRead();
+      
+      if ((millis()-ledLapse) > 1000) {
+        ledLapse = millis();
+        ledState = !ledState;
+        digitalWrite(13,ledState);
+      }
+    }
   }
 }

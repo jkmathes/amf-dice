@@ -7,17 +7,43 @@ import com.badlogic.gdx.Net.HttpResponse;
 import com.badlogic.gdx.Net.HttpResponseListener;
 import com.badlogic.gdx.utils.JsonValue;
 
+/**
+ * Networking and game coordination between the game
+ * itself and the game server
+ * 
+ * @author jkmathes
+ */
 public class Orchestration {
+  /**
+   * Whether or not there is a pending long poll
+   */
   protected boolean _pending;
+  /**
+   * The host of the game server
+   */
   protected String _url;
+  /**
+   * The current result of the long poll
+   */
   protected String _msg;
   
+  /**
+   * Create an orchestration between this game
+   * and the game server
+   * 
+   * @param url the game server host to use
+   */
   public Orchestration(String url) {
     _url = url;
     _msg = null;
     _pending = false;
   }
      
+  /**
+   * Determine if work is ready for processing from the game server
+   * 
+   * @return any work which needs to be processed
+   */
   public boolean hasWork() {
     if(_msg != null) {
       return true;
@@ -28,6 +54,10 @@ public class Orchestration {
     return false;
   }
   
+  /**
+   * Get the currently available piece of work
+   * @return
+   */
   public String getWork() {
     String tmp = _msg;
     _msg = null;
