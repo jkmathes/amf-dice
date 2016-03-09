@@ -11,7 +11,8 @@ var r = {
     COMMAND_REGISTER: 1,
     COMMAND_REGISTER_ACK: 2,
     COMMAND_LED_ON: 3,
-    COMMAND_LED_OFF: 4
+    COMMAND_LED_OFF: 4,
+    COMMAND_BUZZ: 5
   },
   dice: [],
   noble: null,
@@ -79,7 +80,7 @@ var r = {
                     if(value == r.commands.COMMAND_REGISTER) {
                       r.diceMapping[did] = c;
                       r.sendCommand(did, r.commands.COMMAND_REGISTER_ACK);
-                      console.log('Registered dice #' + did);  
+                      console.log('Registered dice #' + did);
                     }
                   });
                   c.notify(true, function(e) {
