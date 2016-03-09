@@ -1,7 +1,5 @@
 var dicecomm = require('./dicecomm');
 var gamecomm = require('./gamecomm');
-var noble = require('noble');
-var async = require('async');
 var passport = require('passport');
 var BasicStrategy = require('passport-http').BasicStrategy;
 
@@ -37,7 +35,7 @@ app.post('/command', passport.authenticate('basic', { session: false }), functio
   var value = req.query.value;
   console.log('Sending ' + value + ' to dice #' + dice);
   dicecomm.sendCommand(dice, value);
-  res.json({status: 'ok'});  
+  res.json({status: 'ok'});
 });
 
 app.use(gamecomm.express.static('public'), passport.authenticate('basic', { session: false }));
