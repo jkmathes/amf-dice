@@ -36,8 +36,8 @@
   THE SOFTWARE.
   ===============================================
 */
-#include <CurieBle.h>
-#include "CurieImu.h"
+#include <CurieBLE.h>
+#include "CurieIMU.h"
 #include <Adafruit_NeoPixel.h>
 
 // SERIAL_DEBUG Macro
@@ -54,223 +54,135 @@
 #define SERIAL_PRINTLN(...)
 #endif
 
-unsigned long ledLapse;
-uint8_t ledState = LOW;
+// ****************************************************************
+// ************** Constants ***************************************
+// ****************************************************************
+signed char orientable[][4] = {
+  // x, y, z, rollVal
+  { 10,   0,  10, 1},
+  { 10,   0, -13, 2},
+  { -2, -17,   0, 3},
+  { -2,  15,  -1, 4},
+  {-14,  -1,  8, 5},
+  {-15,  -2, -11, 6}
+};
+int orientDisp[] = { 0xaa, 0x1, 0x3, 0x7, 0x17, 0x37, 0x77 };
 
-#define VIBE_PIN        7
-// ************* NeoPixel ********************************************
+// ************* I/O Pin assignments **********************
 #define PIXEL_PIN       6     // Where the NeoPixel DIN pin is connected
+#define VIBE_PIN        7     // Where vibrate motot is connected
+#define DICE_ID0       10     // Used to jumper DiceId
+#define DICE_ID1       11     // Used to jumper DiceId
+#define DICE_ID2       12     // Used to jumper DiceId
+#define ONBOARD_LED    13     // activity LED pin
+
+// **************** Other Constants **********************************
 #define NUMPIXELS       8     // Number of LEDS on NeoPixel
+
+#define COMMAND_REGISTER      1   // dice <--> server cmds
+#define COMMAND_REGISTER_ACK  2
+#define COMMAND_BUZZ          5
+// *******************************************************************
+// ************** Globals ********************************************
+// *******************************************************************
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
-void dispLed(int mask, int color, int dlay) {
-  int r = (color>>8)&0xf;
-  int g = (color>>4)&0xf;
-  int b = color&0xf;
-  int c = (r<<16) | (g<<8) | (b);  
-  for (int i=0; i<NUMPIXELS; i++)
-  {
-    if (mask&(1<<i)) pixels.setPixelColor(i,c);
-  }
-  pixels.show();
-  delay(10);
-  pixels.show();  // 2nd time helps fix a bug with bright LED0 issue.
-  delay(10);
-  delay(dlay);
-}
-
-// ************* BLE **************************************************
 BLEPeripheral blePeripheral;        // BLE Peripheral Device (the board you're programming)
-BLEService diceService("0x1812");  // BLE Service
-BLEUnsignedCharCharacteristic diceRollCharacteristic("0x2AC5", BLERead|BLEWrite|BLENotify);//20); // payload size
+BLEService diceService("0x1812");   // BLE Service
+BLEUnsignedCharCharacteristic diceRollCharacteristic("0x2AC5", BLERead|BLEWrite|BLENotify);
 BLEUnsignedCharCharacteristic diceCommandCharacteristic("0x2A9F", BLERead|BLEWrite|BLENotify);
 
-boolean gConnect = false;
+
+unsigned int  onboardLED_interval = 1000;
+bool          onboardLED_state = 0;
+unsigned long onboardLED_t0 = millis();
 unsigned char diceId = 1;
-uint16_t  seqNum = 0;
-uint16_t nextSeqNum() {
-  seqNum++;
-  return seqNum;
+
+boolean bleConnect = false;         // ble link level connection
+bool dice_registered = false;       // dice <--> server state
+// ****************************************************************
+// ************** Functions ***************************************
+// ****************************************************************
+void setupOnboardLED() { pinMode(ONBOARD_LED, OUTPUT); }
+void updateOnboardLED() {
+  if ((millis()-onboardLED_t0) > onboardLED_interval) {
+    onboardLED_state = !(onboardLED_state);
+    digitalWrite(ONBOARD_LED, onboardLED_state);
+    onboardLED_t0 = millis();
+  }
 }
-bool rollSent = false;
-bool registered = false;
-// ************* IMU **************************************************
-int16_t vraw[10]; // raw readings from IMU and info for sending via BLE
-                  // [0:5]=AxAyAzGxGyGz, [6]=movement, [7]=stillMs, [8]=diceId, [9]=seqNum
-int vprev[6];     // previous reading
 
-#define MOVE_THRESHOLD  32
-#define GOOD_ROLL       4
-int16_t movement=0;
-int16_t maxMove[6];
-int16_t moves=0;
-unsigned long stillBegin;
-unsigned long stillMillis=0;   // number of sequential zero movements
+void setupDiceId() { pinMode(DICE_ID2, INPUT_PULLUP); pinMode(DICE_ID1, INPUT_PULLUP);  pinMode(DICE_ID0, INPUT_PULLUP);}
+unsigned char readDiceId() {
+  int a = (digitalRead(DICE_ID2)<<2) | (digitalRead(DICE_ID1)<<1) |digitalRead(DICE_ID0);
+  switch (a) {
+    case 7: diceId = 0; break;            // no jumpers
+    case 3: diceId = 1; break;            // jumper GND -> PIN12
+    case 5: diceId = 2; break;            // jumper GND -> PIN11
+    case 6: default: diceId = 3; break;   // jumper GND -> PIN10
+  }
+  return diceId;
+}
 
+// ************* NeoPixel ********************************************
+class Pixels {
+  private:
+    int buildColor(int color) {
+      int r = (color>>8)&0xf;
+      int g = (color>>4)&0xf;
+      int b = color&0xf;
+      return (r<<16) | (g<<8) | (b);
+    }
+  public:
+    Pixels() { }
+    void setup() {
+      pixels.begin();
+    }
+    void set(int p, int color, int dlay) {
+      int c = buildColor(color);
+      pixels.setPixelColor(p,c);
+      pixels.show();
+      delay(dlay);
+    }
+    void disp(int mask, int color, int dlay) {
+      int r = (color>>8)&0xf;
+      int g = (color>>4)&0xf;
+      int b = color&0xf;
+      int c = (r<<16) | (g<<8) | (b);  
+      for (int i=0; i<NUMPIXELS; i++)  {
+        pixels.setPixelColor(i,(mask&(1<<i))?c:0);
+      }
+      pixels.show();
+      delay(dlay);
+    }
+} pix;
 
 void idleShow()
 {
   static int imask = 0x1;
   static int dir = 1;
-  static int prev = 0;
-  if (stillMillis < 5000) return;
-  int p = stillMillis/150;
+  static unsigned long prev = 0;
+  unsigned long p = (millis()>>7) % 16;
   if (p!=prev) {
     prev = p;
     if (imask==0x01) dir = 1;
     if (imask==0x80) dir = 0;
     if (dir) imask = imask << 1;
     else imask = imask >> 1;
-    dispLed(0xff,0x000,0);
-    dispLed(imask,0xff0,0);
+    pix.disp(imask,0x00f,0);
   }
 }
-
-int16_t imuRead() {
-  for (int i=0; i<6; i++) vprev[i] = vraw[i];
-  CurieImu.getMotion6(&vraw[0], &vraw[1], &vraw[2], &vraw[3], &vraw[4], &vraw[5]);
-  movement = 0;
-
-  for (int i=0; i<6; i++) {
-    int m = (abs(vprev[i]-vraw[i])) >> 9;
-    if (m>movement) movement = m;
-    if (maxMove[i]==0 && m>MOVE_THRESHOLD) { maxMove[i]=m; moves++;}
-  }
-  // movement is 8 bits
-  int mask = 0x0;
-  int t = 0x1;
-  for (int i=0; i<8; i++) {
-    if (movement > (t<<i)) mask = (mask << 1) | 1;
-  }
-  if (movement==0) { // no movement
-    if (stillMillis==0) {
-      stillBegin = millis();
-      stillMillis = 1;
-      rollSent = false;
-    }
-    else {
-      stillMillis = millis() - stillBegin;
-      if (stillMillis > 250) {
-        if (moves < GOOD_ROLL) {
-          dispLed(0xff, 0x000, 0);
-          dispLed(0xff, 0xf00, 0);
-          moves=0;
-          for (int i=0; i<6; i++) maxMove[i]=0;
-        }
-        else if (!rollSent) {
-          int a = vraw[0]>>8;
-          int b = vraw[1]>>8;
-          int c = vraw[2]>>8;
-          unsigned char roll=0;
-          int disp=0;
-          if (a>0x1d && a<0x3d && b>-10 && b<13 && c>0x12 && c<0x32)
-            {roll=1; dispLed(0x1,0x0f0, 30);}
-          else if (a>0x13 && a<0x37 && b>-13 && b<13 && c>(signed char)0xb3 && c<(signed char)0xd6)
-            {roll=2; disp=0x3;}
-          else if (a>(signed char)0xee && a<10 && b>(signed char)0xb1 && b<(signed char)0xd1 && c>(signed char)0xe6 && c<10)
-            {roll=3; disp=0x7;}
-          else if (a>(signed char)0xed && a<10 && b>0x30 && b<0x50 && c>(signed char)0xeb && c<10)
-            {roll=4; disp=0x17;}
-          else if (a>(signed char)0xc5 && a<(signed char)0xe0 && b>-10 && b<10 && c>0x1a && c<0x36)
-            {roll=5; disp=0x37;}
-          else if (a>(signed char)0xbb && a<(signed char)0xdb && b>-10 && b<10 && c>(signed char)0xbb && c<(signed char)0xdb)
-            {roll=6; disp=0x77;}
-          if (roll!=0) {
-            dispLed(disp, 0x0f0, 50);
-            diceRollCharacteristic.setValue((diceId << 4) | roll);            
-            rollSent = true;
-          }
-          else
-          {
-            moves=0;
-            for (int i=0; i<6; i++) maxMove[i]=0;
-          }
-        } else { // rollSent
-          idleShow();
-        }
-      }
-    }
-  }
-  else
-  {
-    if (rollSent==true) {
-      moves=0;
-      for (int i=0; i<6; i++) maxMove[i]=0;
-    }
-    stillMillis=0;
-  }
-  
-  SERIAL_PRINT(movement);
-  SERIAL_PRINT("\t");
-  
-  SERIAL_PRINTLN(stillMillis);
-
-  if (stillMillis <=250) {
-    dispLed(0xff, 0x000, 0);
-    dispLed(mask, 0x00f, 0);
-  }
-
-  if (movement > 64)
-  {
-    digitalWrite(VIBE_PIN,1);
-    delay(50);
+// ************* Vibrate ********************************************
+void setupVibe() { pinMode(VIBE_PIN, OUTPUT); digitalWrite(VIBE_PIN,0);}
+void vibrate(int dur) {
+    digitalWrite(VIBE_PIN,1); delay(dur);
+    digitalWrite(VIBE_PIN,0); delay(dur);
+    digitalWrite(VIBE_PIN,1); delay(dur);
     digitalWrite(VIBE_PIN,0);
-    delay(50);
-    digitalWrite(VIBE_PIN,1);
-    delay(50);
-    digitalWrite(VIBE_PIN,0);
-  }
-  return movement;
 }
 
-unsigned char readDiceId()
-{
-  int a12 = digitalRead(12);
-  int a11 = digitalRead(11);
-  int a10 = digitalRead(10);
-  int a = (a12<<2)|(a11<<1)|a10;
-  switch (a) {
-    case 7: diceId = 0; break;
-    case 3: diceId = 1; break;
-    case 5: diceId = 2; break;
-    case 6:
-    default: diceId = 3; break;
-  }
-  return diceId;
-}
-
-const int ledPin = 13;      // activity LED pin
-boolean blinkState = false; // state of the LED
-// ************* setup **************************************************
-void setup() {
-  // diceId read pins
-  pinMode(12, INPUT_PULLUP);
-  pinMode(11, INPUT_PULLUP);
-  pinMode(10, INPUT_PULLUP);
-  
-  // onboard LED
-  pinMode(ledPin, OUTPUT);
-  
-  pinMode(VIBE_PIN, OUTPUT);
-  digitalWrite(VIBE_PIN,0);
-  
-  pixels.begin();
-  pixels.show();
-  dispLed(0xff, 0x0, 0);        // all off
-  dispLed(0xff, 0xfff, 1000);   // all white 1-sec
-  dispLed(0xff, 0xff0, 500);
-  dispLed(0xff, 0x0f0, 500);
-  dispLed(0xff, 0x000, 0);
-  
-  SERIAL_SETUP(9600);
-
-  dispLed(0x01, 0xff0, 0);      // 0 - yellow BLE setup
-
-// *********** BLE Setup **************************************
-  /* Set a local name for the BLE device
-     This name will appear in advertising packets
-     and can be used by remote devices to identify this BLE device
-     The name can be changed but maybe be truncated based on space left in advertisement packet */
+// ************* BLE **************************************************
+void bleSetup() {
   blePeripheral.setLocalName("CurieDice");
   blePeripheral.setAdvertisedServiceUuid(diceService.uuid());
   blePeripheral.addAttribute(diceService);
@@ -280,120 +192,250 @@ void setup() {
   blePeripheral.setEventHandler(BLEDisconnected, disconnectHandler);
   diceCommandCharacteristic.setEventHandler(BLEWritten, commandHandler);
   blePeripheral.begin();
-  SERIAL_PRINTLN("Bluetooth device active, waiting for connections...");
-
-  dispLed(0x01, 0x0f0, 500);      // 0 - green BLE setup done
-
-  dispLed(0x02, 0xff0, 500);      // 1 - yellow IMU setup
-
-  // *************** IMU Setup ***************************************
-  // initialize device
-  SERIAL_PRINTLN("Initializing IMU device...");
-  CurieImu.initialize();
-
-  // verify connection
-  SERIAL_PRINTLN("Testing device connections...");
-  if (CurieImu.testConnection()) {
-    SERIAL_PRINTLN("CurieImu connection successful");
-  } else {
-    SERIAL_PRINTLN("CurieImu connection failed");
-    dispLed(0x80,0xf00,0);      // 8 - red - err connecting to IMU
-  }
-  
-  // use the code below to calibrate accel/gyro offset values
-  SERIAL_PRINTLN("Internal sensor offsets BEFORE calibration...");
-  SERIAL_PRINT(CurieImu.getXAccelOffset()); 
-  SERIAL_PRINT("\t"); // -76
-  SERIAL_PRINT(CurieImu.getYAccelOffset()); 
-  SERIAL_PRINT("\t"); // -235
-  SERIAL_PRINT(CurieImu.getZAccelOffset()); 
-  SERIAL_PRINT("\t"); // 168
-  SERIAL_PRINT(CurieImu.getXGyroOffset()); 
-  SERIAL_PRINT("\t"); // 0
-  SERIAL_PRINT(CurieImu.getYGyroOffset()); 
-  SERIAL_PRINT("\t"); // 0
-  SERIAL_PRINT(CurieImu.getZGyroOffset());
-  
-  dispLed(0x02, 0x00f, 200);      // 1 - blue IMU - orient dice for calibration
-
-  CurieImu.setGyroOffsetEnabled(true);
-  CurieImu.setAccelOffsetEnabled(true);
-
-  dispLed(0x02, 0x0f0, 0);      // 1 - green IMU setup done
-  readDiceId();
-
-  for (int i=0; i<6; i++) maxMove[i]=0;
-  ledLapse = millis();
 }
-
-
-
-void atten(int16_t *a, int len, int shiftBy)
-{
-  for (int i=0; i<len; i++) {
-    a[i] = a[i] >> shiftBy;
+void commandHandler(BLECentral &central, BLECharacteristic &characteristic) {
+  int cvalue = diceCommandCharacteristic.value();
+  switch(cvalue) {
+    case COMMAND_REGISTER_ACK: dice_registered = true; break;
+    case COMMAND_BUZZ:         vibrate(50);       break;
   }
 }
-
-void connectHandler(BLECentral& central)
-{
-  gConnect = true;
+void registerDice() {
+  diceCommandCharacteristic.setValue((diceId << 4) | COMMAND_REGISTER);
+}
+void connectHandler(BLECentral& central) {
+  bleConnect = true;
   SERIAL_PRINT("Connected to central: ");
   // print the central's MAC address:
   SERIAL_PRINTLN(central.address());
   // turn on the LED to indicate the connection:
-  digitalWrite(13, HIGH);  
+  digitalWrite(ONBOARD_LED, HIGH);  
 }
-
-void disconnectHandler(BLECentral& central)
-{
-  gConnect = false;
+void disconnectHandler(BLECentral& central) {
+  bleConnect = false;
   SERIAL_PRINT("Disconnected from central: ");
-  digitalWrite(13, LOW);  
+  digitalWrite(ONBOARD_LED, LOW);
+}
+void sendDiceRoll(int roll) {
+  diceRollCharacteristic.setValue((diceId << 4) | roll);  
 }
 
-#define COMMAND_REGISTER      1
-#define COMMAND_REGISTER_ACK  2
-#define COMMAND_BUZZ          5
 
-void commandHandler(BLECentral &central, BLECharacteristic &characteristic)
+
+
+
+// ************* IMU **************************************************
+int vcurr[6];      // raw readings from IMU [0:5]=AxAyAzGxGyGz
+int vprev[6];     // previous reading
+int movement=0;
+#define TSLOT_SHIFT    5     // 32ms chunks
+int noMotionCount=0;
+int loMotionCount=0;
+int hiMotionCount=0;
+#define TSLOTS 10           // storage for chunks
+int loCounts[TSLOTS]={};
+int hiCounts[TSLOTS]={};
+int tIndex=0;
+int noMoSlots=0;    // number of consecutive noMotion slots
+int dispPause=0;
+
+void resultShow(int ori) {
+  pix.disp(orientDisp[ori], (ori)?0x0f0:0xf00, 0);
+}
+
+int calcOrientation()
 {
-  int cvalue = diceCommandCharacteristic.value();
-  switch(cvalue) {
-    case COMMAND_REGISTER_ACK: registered = true; break;
-    case COMMAND_BUZZ:
-      digitalWrite(VIBE_PIN,1);
-      delay(50);
-      digitalWrite(VIBE_PIN,0);
-      delay(50);
-      digitalWrite(VIBE_PIN,1);
-      delay(50);
-      digitalWrite(VIBE_PIN,0);
-      break;
+  int x = vcurr[0]>>8;
+  int y = vcurr[1]>>8;
+  int z = vcurr[2]>>8;
+  SERIAL_PRINT(x);
+  SERIAL_PRINT("\t");
+  SERIAL_PRINT(y);
+  SERIAL_PRINT("\t");
+  SERIAL_PRINTLN(z);
+  for (int i=0; i<6; i++) {
+    signed char *t = orientable[i];
+    if (abs(x-t[0])<3 && abs(y-t[1])<3 && abs(z-t[2])<3) return t[3];
+  }
+  return 0;
+}
+
+void diceCal()
+{
+  int face[] = {5, 4, 2, 3, 1, 6};
+  for (int i=0; i<6; i++) {
+    int f = face[i];
+    pix.disp(orientDisp[f], 0xf00, 3000);
+    pix.disp(orientDisp[f], 0x0ff, 2000);
+    pix.disp(orientDisp[f], 0x0f0, 1000);
+    CurieIMU.readAccelerometer(vcurr[0], vcurr[1], vcurr[2]);
+    signed char *t = orientable[i];
+    t[0] = (signed char)(vcurr[0]>>8);
+    t[1] = (signed char)(vcurr[1]>>8);
+    t[2] = (signed char)(vcurr[2]>>8);
+    t[3] = (signed char) f;
   }
 }
 
-void registerDice() {
-  diceCommandCharacteristic.setValue((diceId << 4) | COMMAND_REGISTER);
+int16_t imuRead() {
+static unsigned long currTimeQuant = 0;
+  for (int i=0; i<6; i++) vprev[i] = vcurr[i];
+  //CurieIMU.readMotionSensor(vcurr[0], vcurr[1], vcurr[2], vcurr[3], vcurr[4], vcurr[5]);
+  CurieIMU.readAccelerometer(vcurr[0], vcurr[1], vcurr[2]);
+  
+  movement = 0;
+  for (int i=0; i<3; i++) {
+    //int m = (abs(vprev[i]-vcurr[i])) >> 9;
+    int m = abs(vprev[i]-vcurr[i]) >> 7;
+    if (m>movement) movement = m;
+  }
+
+  unsigned long tq = millis()>>TSLOT_SHIFT;
+  if (tq == currTimeQuant) {
+    if (movement >= 16) hiMotionCount++;
+    else if (movement >= 4) loMotionCount++;
+    else
+      noMotionCount++;
+  }
+  else {
+    // end of a time slot
+    loCounts[tIndex]=loMotionCount;
+    hiCounts[tIndex]=hiMotionCount;
+    tIndex = (tIndex==(TSLOTS-1))?0:tIndex+1;
+    if ((loMotionCount+hiMotionCount)==0) {
+      // this slot had no motion
+      noMoSlots++;
+      if (dispPause)
+        dispPause--;
+      else
+        idleShow();
+      if (noMoSlots == 5) {
+        // eval for possible throw
+        int i = tIndex - (5+1);
+        if (i<0) i+= TSLOTS;
+        int his=0;
+        int lows=0;
+        pix.disp(0xff, 0x000, 0);
+        for (int n=0; n<5; n++) {
+          SERIAL_PRINT(i);
+          SERIAL_PRINT("hist: ");
+
+          SERIAL_PRINT(loCounts[i]);
+          SERIAL_PRINT("\t");
+          SERIAL_PRINTLN(hiCounts[i]);
+          if (hiCounts[i]>0) {
+            his++;
+            //pix.set(n,0xf00,250);
+          }
+          else if (loCounts[i]>0) {
+            lows++;
+            //pix.set(n,0xaa0,250);
+          }
+          i = (i==0)? TSLOTS-1:i-1;
+        }
+        if ((his+lows)>3 && his>0) {
+        //if ((his+lows)>1 && his>=0) {
+          int roll = calcOrientation();
+          SERIAL_PRINTLN(roll);
+          resultShow(roll);
+          sendDiceRoll(roll);
+          dispPause = 50;
+        }
+      }
+    } else {
+      // this slot had motion
+      noMoSlots = 0;
+    }
+
+    // reset for next tslot
+    noMotionCount=0;
+    loMotionCount=0;
+    hiMotionCount=0;
+    currTimeQuant = millis()>>TSLOT_SHIFT;
+  }
 }
+
+
+
+
+// **********************************************************************
+// ************* setup **************************************************
+// **********************************************************************
+void setup() {
+  setupOnboardLED();
+  setupDiceId();
+
+  pix.setup();
+  setupVibe();
+
+  pix.disp(0xff, 0x0, 0);        // all off
+  pix.disp(0xff, 0xfff, 1000);   // all white 1-sec
+  pix.disp(0xff, 0xff0, 500);
+  pix.disp(0xff, 0x0f0, 500);
+  pix.disp(0xff, 0x000, 0);
+  
+  SERIAL_SETUP(9600);
+  pix.set(0, 0xff0, 0);      // 0 - yellow BLE setup
+  bleSetup();
+  SERIAL_PRINTLN("Bluetooth device active, waiting for connections...");
+  pix.set(1, 0x0f0, 500);      // 0 - green BLE setup done
+
+
+  // *************** IMU Setup ***************************************
+  // initialize device
+  SERIAL_PRINTLN("Initializing IMU device...");
+  int rc = CurieIMU.begin();
+  
+  pix.set(2, 0xff0, 500);      // 1 - yellow IMU setup
+  
+  // verify connection
+  SERIAL_PRINTLN("Testing device connections...");
+  if (CurieIMU.testConnection()) {
+    SERIAL_PRINTLN("CurieImu connection successful");
+  } else {
+    SERIAL_PRINTLN("CurieImu connection failed");
+    pix.set(7,0xf00,0);      // 8 - red - err connecting to IMU
+  }
+
+  CurieIMU.setAccelerometerRange(8);
+  CurieIMU.setGyroRange(2000);
+  /*
+  // use the code below to calibrate accel/gyro offset values
+  SERIAL_PRINTLN("Internal sensor offsets BEFORE calibration...");
+  SERIAL_PRINT(CurieIMU.getXAccelOffset()); 
+  SERIAL_PRINT("\t"); // -76
+  SERIAL_PRINT(CurieIMU.getYAccelOffset()); 
+  SERIAL_PRINT("\t"); // -235
+  SERIAL_PRINT(CurieIMU.getZAccelOffset()); 
+  SERIAL_PRINT("\t"); // 168
+  SERIAL_PRINT(CurieIMU.getXGyroOffset()); 
+  SERIAL_PRINT("\t"); // 0
+  SERIAL_PRINT(CurieIMU.getYGyroOffset()); 
+  SERIAL_PRINT("\t"); // 0
+  SERIAL_PRINT(CurieIMU.getZGyroOffset());
+  
+  pix.set(3, 0x00f, 200);      // 1 - blue IMU - orient dice for calibration
+
+  CurieIMU.setGyroOffsetEnabled(true);
+  CurieIMU.setAccelOffsetEnabled(true);
+*/
+  pix.set(4, 0x0f0, 0);      // 1 - green IMU setup done
+  readDiceId();
+
+  diceCal();
+
+
+}
+
+
 
 void loop() {
   BLECentral central = blePeripheral.central();
-  if (central) {
-    while (central.connected()) {
-      if (!registered) {
-        registerDice();
-      }
+  if (central && central.connected() && !dice_registered) registerDice();
 
-      blePeripheral.poll();
+  blePeripheral.poll();
+  imuRead();
+  updateOnboardLED();
 
-      imuRead();
-      
-      if ((millis()-ledLapse) > 1000) {
-        ledLapse = millis();
-        ledState = !ledState;
-        digitalWrite(13,ledState);
-      }
-    }
-  }
 }
+
