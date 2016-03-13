@@ -262,11 +262,21 @@ int calcOrientation()
 
 void diceCal()
 {
+  // Calibration procedure:
+  //  Die display will request user to orient die with requested face up.
+  //  User will have 6 seconds to do this for each face.  The display will go from RED -> YELLOW -> GREEN.
+  //  After the 6 seconds, the orientation is read and assigned to that face.
+  //  Tip: Notice the sequence being requested below in face[].
+  //       It is easiest to power on dice with logo & display facing you, upright so top value is 5 which is the first requested face.
+  //       Then, rotate die counter clockwise with logo continue to face you.  That would be 4, 2, 3.
+  //       Then, logo up is 1.
+  //       Then, logo down is 6.
+    
   int face[] = {5, 4, 2, 3, 1, 6};
   for (int i=0; i<6; i++) {
     int f = face[i];
     pix.disp(orientDisp[f], 0xf00, 3000);
-    pix.disp(orientDisp[f], 0x0ff, 2000);
+    pix.disp(orientDisp[f], 0xf60, 2000);
     pix.disp(orientDisp[f], 0x0f0, 1000);
     CurieIMU.readAccelerometer(vcurr[0], vcurr[1], vcurr[2]);
     signed char *t = orientable[i];
