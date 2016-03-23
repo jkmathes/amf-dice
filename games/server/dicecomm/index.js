@@ -54,7 +54,7 @@ var r = {
       r.diceMapping[uuid] = name;
       p.on('disconnect', function() {
         console.log('Disconnected from: ' + p);
-        r.noble.startScanning();
+        r.noble.startScanning([diceServiceUUID], false);
       });
 
       p.connect(function(e) {
