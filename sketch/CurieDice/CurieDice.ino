@@ -232,12 +232,13 @@ int movement=0;
 int noMotionCount=0;
 int loMotionCount=0;
 int hiMotionCount=0;
-#define TSLOTS 10           // storage for chunks
+#define TSLOTS 20           // storage for chunks
 int loCounts[TSLOTS]={};
 int hiCounts[TSLOTS]={};
 int tIndex=0;
 int noMoSlots=0;    // number of consecutive noMotion slots
 int dispPause=0;
+#define ORIENTATION_TOL   9
 
 void resultShow(int ori) {
   pix.disp(orientDisp[ori], (ori)?0x0f0:0xf00, 0);
@@ -255,7 +256,7 @@ int calcOrientation()
   SERIAL_PRINTLN(z);
   for (int i=0; i<6; i++) {
     signed char *t = orientable[i];
-    if (abs(x-t[0])<3 && abs(y-t[1])<3 && abs(z-t[2])<3) return t[3];
+    if (abs(x-t[0])<ORIENTATION_TOL && abs(y-t[1])<ORIENTATION_TOL && abs(z-t[2])<ORIENTATION_TOL) return t[3];
   }
   return 0;
 }
@@ -277,8 +278,8 @@ void diceCal()
     int f = face[i];
     pix.disp(orientDisp[f], 0xf00, 3000);
     pix.disp(orientDisp[f], 0xf60, 2000);
-    pix.disp(orientDisp[f], 0x0f0, 1000);
     CurieIMU.readAccelerometer(vcurr[0], vcurr[1], vcurr[2]);
+    pix.disp(orientDisp[f], 0x0f0, 1000);
     signed char *t = orientable[i];
     t[0] = (signed char)(vcurr[0]>>8);
     t[1] = (signed char)(vcurr[1]>>8);
@@ -288,7 +289,7 @@ void diceCal()
 }
 
 int16_t imuRead() {
-static unsigned long currTimeQuant = 0;
+  static unsigned long currTimeQuant = 0;
   for (int i=0; i<6; i++) vprev[i] = vcurr[i];
   //CurieIMU.readMotionSensor(vcurr[0], vcurr[1], vcurr[2], vcurr[3], vcurr[4], vcurr[5]);
   CurieIMU.readAccelerometer(vcurr[0], vcurr[1], vcurr[2]);
@@ -302,8 +303,8 @@ static unsigned long currTimeQuant = 0;
 
   unsigned long tq = millis()>>TSLOT_SHIFT;
   if (tq == currTimeQuant) {
-    if (movement >= 16) hiMotionCount++;
-    else if (movement >= 4) loMotionCount++;
+    if (movement >= 32) hiMotionCount++;
+    else if (movement >= 8) loMotionCount++;
     else
       noMotionCount++;
   }
@@ -311,14 +312,24 @@ static unsigned long currTimeQuant = 0;
     // end of a time slot
     loCounts[tIndex]=loMotionCount;
     hiCounts[tIndex]=hiMotionCount;
+    if (dispPause) {
+      dispPause--;
+    }
+    else {
+      int pxi = tIndex;
+      for (int pxc=7; pxc>=0; pxc--) {
+        int color = 0x0;
+        if (hiCounts[pxi]) color=0x00f;
+        else if (loCounts[pxi]) color=0x0f0;
+        pix.set(pxc, color, 0);
+        if (pxi > 0)  pxi--;
+        else          pxi = TSLOTS-1;
+      }
+    }
     tIndex = (tIndex==(TSLOTS-1))?0:tIndex+1;
     if ((loMotionCount+hiMotionCount)==0) {
       // this slot had no motion
       noMoSlots++;
-      if (dispPause)
-        dispPause--;
-      else
-        idleShow();
       if (noMoSlots == 5) {
         // eval for possible throw
         int i = tIndex - (5+1);
@@ -326,7 +337,7 @@ static unsigned long currTimeQuant = 0;
         int his=0;
         int lows=0;
         pix.disp(0xff, 0x000, 0);
-        for (int n=0; n<5; n++) {
+        for (int n=0; n<15; n++) {  // eval last n slots
           SERIAL_PRINT(i);
           SERIAL_PRINT("hist: ");
 
@@ -343,8 +354,7 @@ static unsigned long currTimeQuant = 0;
           }
           i = (i==0)? TSLOTS-1:i-1;
         }
-        if ((his+lows)>3 && his>0) {
-        //if ((his+lows)>1 && his>=0) {
+        if ((his+lows)>6 && his>0) {
           int roll = calcOrientation();
           SERIAL_PRINTLN(roll);
           resultShow(roll);
@@ -366,8 +376,6 @@ static unsigned long currTimeQuant = 0;
 }
 
 
-
-
 // **********************************************************************
 // ************* setup **************************************************
 // **********************************************************************
@@ -375,6 +383,7 @@ void setup() {
   setupOnboardLED();
   setupDiceId();
 
+  
   pix.setup();
   setupVibe();
 
@@ -391,6 +400,8 @@ void setup() {
   pix.set(1, 0x0f0, 500);      // 0 - green BLE setup done
 
 
+  readDiceId();
+  
   // *************** IMU Setup ***************************************
   // initialize device
   SERIAL_PRINTLN("Initializing IMU device...");
@@ -407,33 +418,12 @@ void setup() {
     pix.set(7,0xf00,0);      // 8 - red - err connecting to IMU
   }
 
-  CurieIMU.setAccelerometerRange(8);
-  CurieIMU.setGyroRange(2000);
-  /*
-  // use the code below to calibrate accel/gyro offset values
-  SERIAL_PRINTLN("Internal sensor offsets BEFORE calibration...");
-  SERIAL_PRINT(CurieIMU.getXAccelOffset()); 
-  SERIAL_PRINT("\t"); // -76
-  SERIAL_PRINT(CurieIMU.getYAccelOffset()); 
-  SERIAL_PRINT("\t"); // -235
-  SERIAL_PRINT(CurieIMU.getZAccelOffset()); 
-  SERIAL_PRINT("\t"); // 168
-  SERIAL_PRINT(CurieIMU.getXGyroOffset()); 
-  SERIAL_PRINT("\t"); // 0
-  SERIAL_PRINT(CurieIMU.getYGyroOffset()); 
-  SERIAL_PRINT("\t"); // 0
-  SERIAL_PRINT(CurieIMU.getZGyroOffset());
-  
-  pix.set(3, 0x00f, 200);      // 1 - blue IMU - orient dice for calibration
-
-  CurieIMU.setGyroOffsetEnabled(true);
-  CurieIMU.setAccelOffsetEnabled(true);
-*/
-  pix.set(4, 0x0f0, 0);      // 1 - green IMU setup done
-  readDiceId();
+  CurieIMU.setDetectionThreshold(CURIE_IMU_SHOCK, 1500);
+  CurieIMU.setDetectionDuration(CURIE_IMU_SHOCK, 50);
 
   diceCal();
 
+  pix.set(4, 0x0f0, 0);      // 1 - green IMU setup done
 
 }
 
