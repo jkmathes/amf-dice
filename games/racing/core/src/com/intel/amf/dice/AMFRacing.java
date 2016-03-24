@@ -8,7 +8,7 @@ public class AMFRacing extends Game {
   public void create() {
     AssetLoader.load();
     AssetLoader._music.setLooping(true);
-    AssetLoader._music.play();
+    //AssetLoader._music.play();
     Singleton.getInstance().setGame(this);
     setScreen(new GameScreen(this));
   }
