@@ -1,6 +1,7 @@
 package com.intel.amf.dice;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.intel.amf.dice.screens.game.GameScreen;
 
 public class AMFRacing extends Game {
@@ -9,6 +10,7 @@ public class AMFRacing extends Game {
     AssetLoader.load();
     AssetLoader._music.setLooping(true);
     //AssetLoader._music.play();
+    Gdx.net = new GameNetImpl();
     Singleton.getInstance().setGame(this);
     setScreen(new GameScreen(this));
   }

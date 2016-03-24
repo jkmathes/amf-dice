@@ -5,7 +5,9 @@ import com.badlogic.gdx.Net.HttpMethods;
 import com.badlogic.gdx.Net.HttpRequest;
 import com.badlogic.gdx.Net.HttpResponse;
 import com.badlogic.gdx.Net.HttpResponseListener;
+import com.badlogic.gdx.net.NetJavaImpl;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.async.AsyncExecutor;
 
 /**
  * Networking and game coordination between the game
@@ -26,6 +28,7 @@ public class Orchestration {
    * The current result of the long poll
    */
   protected String _msg;
+  protected HttpRequest _pendingRequest;
   
   /**
    * Create an orchestration between this game
@@ -68,6 +71,7 @@ public class Orchestration {
     HttpRequest get = new HttpRequest(HttpMethods.GET);
     get.setUrl(_url + "/work");
     _pending = true;
+    _pendingRequest = get;
     
     Gdx.net.sendHttpRequest(get, new HttpResponseListener() {
 
@@ -75,23 +79,29 @@ public class Orchestration {
       public void handleHttpResponse(HttpResponse response) {
         _msg = response.getResultAsString();
         _pending = false;
+        _pendingRequest = null;
       }
 
       @Override
       public void failed(Throwable t) {
         _msg = null;
         _pending = false;
+        _pendingRequest = null;
       }
 
       @Override
       public void cancelled() {
         _pending = false;
+        _pendingRequest = null;
       }
     });
   }
   
   public void sendWin(int car) {
     sendCommand("{\"type\": \"win\", \"data\": {\"car\": \"" + car + "\"}}");
+    if(_pendingRequest != null) {
+      Gdx.net.cancelHttpRequest(_pendingRequest);
+    }
   }
   
   private void sendCommand(String msg) {
