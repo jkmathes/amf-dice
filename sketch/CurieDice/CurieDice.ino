@@ -292,16 +292,17 @@ void diceCal()
   int face[] = {5, 4, 2, 3, 1, 6};
   for (int i=0; i<6; i++) {
     int f = face[i];
-    pix.disp(orientDisp[f], 0xf00, 3000);
-    pix.disp(orientDisp[f], 0xf60, 2000);
+    pix.disp(orientDisp[f], 0xf00, 1250);
+    pix.disp(orientDisp[f], 0xf60, 1000);
     CurieIMU.readAccelerometer(vcurr[0], vcurr[1], vcurr[2]);
-    pix.disp(orientDisp[f], 0x0f0, 1000);
+    pix.disp(orientDisp[f], 0x0f0, 250);
     signed char *t = orientable[i];
     t[0] = (signed char)(vcurr[0]>>8);
     t[1] = (signed char)(vcurr[1]>>8);
     t[2] = (signed char)(vcurr[2]>>8);
     t[3] = (signed char) f;
   }
+  vibrate(50);
 }
 
 int16_t imuRead() {
