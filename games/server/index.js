@@ -3,7 +3,25 @@ var gamecomm = require('./gamecomm');
 var passport = require('passport');
 var BasicStrategy = require('passport-http').BasicStrategy;
 
-gamecomm.init(8000);
+/**
+ * Initialize the comm system between the game and the server
+ *
+ * We also specify the callback here for events flowing from the game
+ */
+gamecomm.init(8000, function(gameEvent) {
+  console.log('Game event received: ' + JSON.stringify(gameEvent));
+  if(gameEvent.type && gameEvent.type === 'win') {
+    var car = gameEvent.data.car;
+    console.log('  Car ' + car + ' wins!');
+    dicecomm.sendCommand(car, dicecomm.commands.COMMAND_BUZZ);
+  }
+});
+
+/**
+ * Initialize the comm system between the dice and the server
+ *
+ * We also specify the callback here for events flowing from the dice
+ */
 dicecomm.init(function(dice, value) {
   console.log('Found roll of [' + value + '] from dice #' + dice);
   gamecomm.roll(dice, value);

@@ -12,7 +12,8 @@ var r = {
     COMMAND_REGISTER_ACK: 2,
     COMMAND_LED_ON: 3,
     COMMAND_LED_OFF: 4,
-    COMMAND_BUZZ: 5
+    COMMAND_BUZZ: 5,
+    COMMAND_WIN: 6
   },
   dice: [],
   noble: null,

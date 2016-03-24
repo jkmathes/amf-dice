@@ -68,9 +68,11 @@ var r = {
    * Initialize the dice communication system.
    * This listens as an HTTP server
    */
-  init: function(port) {
+  init: function(port, eventCallback) {
     r.express = require('express');
+    r.bodyParser = require('body-parser');
     r.app = r.express();
+    r.app.use(r.bodyParser.json());
     r.pendingResponse = null;
     r.app.get('/work', function(req, res) {
       if(r.pendingRolls.length > 0) {
@@ -82,6 +84,11 @@ var r = {
           timestamp: new Date().getTime()
         };
       }
+    });
+
+    r.app.post('/event', function(req, res) {
+      eventCallback(req.body);
+      res.json({'result': 'success'});
     });
 
     /**
