@@ -102,7 +102,7 @@ public class GameWorld extends World implements Constants {
   public GameWorld(float gameHeight) {
     super();
     createHandlers();
-    _orch = new Orchestration("http://" + Singleton.getInstance().getGameHost() + ":8000/work");
+    _orch = new Orchestration("http://" + Singleton.getInstance().getGameHost() + ":8000");
     _objects = new ArrayList<RenderObject>();
     _createdObjects = new ArrayList<RenderObject>();
     _gameHeight = (int)gameHeight;
@@ -211,6 +211,7 @@ public class GameWorld extends World implements Constants {
         addObject(new Banner(this, _winner));
         _objects.remove(_cars[_winner]);
         _objects.add(_cars[_winner]);
+        _orch.sendWin(_winner);
         Timer.schedule(new Task() {
 
           @Override

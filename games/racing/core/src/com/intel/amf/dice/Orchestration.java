@@ -66,7 +66,7 @@ public class Orchestration {
   
   private void fetchWork() {
     HttpRequest get = new HttpRequest(HttpMethods.GET);
-    get.setUrl(_url);
+    get.setUrl(_url + "/work");
     _pending = true;
     
     Gdx.net.sendHttpRequest(get, new HttpResponseListener() {
@@ -86,6 +86,37 @@ public class Orchestration {
       @Override
       public void cancelled() {
         _pending = false;
+      }
+    });
+  }
+  
+  public void sendWin(int car) {
+    sendCommand("{\"type\": \"win\", \"data\": {\"car\": \"" + car + "\"}}");
+  }
+  
+  private void sendCommand(String msg) {
+    HttpRequest post = new HttpRequest(HttpMethods.POST);
+    post.setUrl(_url + "/event");
+    post.setHeader("Content-Type", "application/json");
+    post.setContent(msg);
+    Gdx.net.sendHttpRequest(post, new HttpResponseListener() {
+
+      @Override
+      public void handleHttpResponse(HttpResponse httpResponse) {
+        // TODO Auto-generated method stub
+        
+      }
+
+      @Override
+      public void failed(Throwable t) {
+        // TODO Auto-generated method stub
+        
+      }
+
+      @Override
+      public void cancelled() {
+        // TODO Auto-generated method stub
+        
       }
     });
   }
