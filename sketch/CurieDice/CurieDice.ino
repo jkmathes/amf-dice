@@ -82,6 +82,7 @@ int orientDisp[] = { 0xaa, 0x1, 0x3, 0x7, 0x17, 0x37, 0x77 };
 #define COMMAND_REGISTER      1   // dice <--> server cmds
 #define COMMAND_REGISTER_ACK  2
 #define COMMAND_BUZZ          5
+#define COMMAND_WINNER        6
 // *******************************************************************
 // ************** Globals ********************************************
 // *******************************************************************
@@ -181,6 +182,19 @@ void vibrate(int dur) {
     digitalWrite(VIBE_PIN,0);
 }
 
+void winnerDance(int secs) {
+  static int danceVibe[] = {1,  0,  0,0,0, 1,0,1,0,0};
+  static int danceColor[] =     {0xf0,0x0,0xf,0x0,0xf0,0x0,0xf,0x0,0x0,0x0};
+  static int danceMask[] =      {0xaa,0xff,0x55,0xff,0xaa,0xff,0x55,0xff,0xff,0xff};
+
+  for (int j=0; j<secs; j++) {
+    for (int i=0; i<10; i++) {
+      pix.disp(danceMask[i], danceColor[i], 0);
+      digitalWrite(VIBE_PIN, danceVibe[i]);
+      delay(100);
+    }
+  }
+}
 // ************* BLE **************************************************
 void bleSetup() {
   blePeripheral.setLocalName("CurieDice");
@@ -198,6 +212,8 @@ void commandHandler(BLECentral &central, BLECharacteristic &characteristic) {
   switch(cvalue) {
     case COMMAND_REGISTER_ACK: dice_registered = true; break;
     case COMMAND_BUZZ:         vibrate(50);       break;
+    case COMMAND_WINNER:
+      winnerDance(5); break;
   }
 }
 void registerDice() {
@@ -354,7 +370,7 @@ int16_t imuRead() {
           }
           i = (i==0)? TSLOTS-1:i-1;
         }
-        if ((his+lows)>6 && his>0) {
+        if ((his+lows)>9 && his>3) {
           int roll = calcOrientation();
           SERIAL_PRINTLN(roll);
           resultShow(roll);
@@ -401,7 +417,8 @@ void setup() {
 
 
   readDiceId();
-  
+
+  winnerDance(2);
   // *************** IMU Setup ***************************************
   // initialize device
   SERIAL_PRINTLN("Initializing IMU device...");
