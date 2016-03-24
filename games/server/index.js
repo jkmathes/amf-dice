@@ -13,7 +13,7 @@ gamecomm.init(8000, function(gameEvent) {
   if(gameEvent.type && gameEvent.type === 'win') {
     var car = gameEvent.data.car;
     console.log('  Car ' + car + ' wins!');
-    dicecomm.sendCommand(car, dicecomm.commands.COMMAND_BUZZ);
+    dicecomm.sendCommand(car, dicecomm.commands.COMMAND_WIN);
   }
 });
 
