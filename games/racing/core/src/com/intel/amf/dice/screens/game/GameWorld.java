@@ -183,6 +183,7 @@ public class GameWorld extends World implements Constants {
     if(_gameOver == false) {
       _gameOver = true;
       _winner = carIndex;
+      _orch.sendWin(_winner);
     }
   }
   
@@ -211,7 +212,6 @@ public class GameWorld extends World implements Constants {
         addObject(new Banner(this, _winner));
         _objects.remove(_cars[_winner]);
         _objects.add(_cars[_winner]);
-        _orch.sendWin(_winner);
         Timer.schedule(new Task() {
 
           @Override
