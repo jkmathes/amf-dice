@@ -369,7 +369,7 @@ public class GameWorld extends World implements Constants {
    * @param value the value of the die
    */
   public void roll(int corner, int value) {
-    if(corner < 0 || corner >= _cars.length) {
+    if(corner < 0 || corner >= _cars.length || value < 1 || value > 6) {
       return;
     }
     if(_cars[corner].inMotion() == false && _beginGame) {
