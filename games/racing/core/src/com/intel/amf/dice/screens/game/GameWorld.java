@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
@@ -102,7 +101,7 @@ public class GameWorld extends World implements Constants {
   public GameWorld(float gameHeight) {
     super();
     createHandlers();
-    _orch = new Orchestration("http://" + Singleton.getInstance().getGameHost() + ":8000");
+    _orch = new Orchestration(Singleton.getInstance().getGameHost());
     _objects = new ArrayList<RenderObject>();
     _createdObjects = new ArrayList<RenderObject>();
     _gameHeight = (int)gameHeight;

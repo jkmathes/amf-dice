@@ -1,13 +1,16 @@
 package com.intel.amf.dice;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Net.HttpMethods;
-import com.badlogic.gdx.Net.HttpRequest;
-import com.badlogic.gdx.Net.HttpResponse;
-import com.badlogic.gdx.Net.HttpResponseListener;
-import com.badlogic.gdx.net.NetJavaImpl;
+import com.badlogic.gdx.Net.Protocol;
+import com.badlogic.gdx.net.Socket;
+import com.badlogic.gdx.net.SocketHints;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.async.AsyncExecutor;
 
 /**
  * Networking and game coordination between the game
@@ -17,18 +20,21 @@ import com.badlogic.gdx.utils.async.AsyncExecutor;
  */
 public class Orchestration {
   /**
-   * Whether or not there is a pending long poll
-   */
-  protected boolean _pending;
-  /**
    * The host of the game server
    */
   protected String _url;
   /**
-   * The current result of the long poll
+   * A thread to fetch messages asynchronously
    */
-  protected String _msg;
-  protected HttpRequest _pendingRequest;
+  protected Thread _workThread;
+  /**
+   * The work socket in use
+   */
+  protected Socket _socket;
+  /**
+   * A queue of work coming from the server
+   */
+  protected ConcurrentLinkedQueue<String> _messages;
   
   /**
    * Create an orchestration between this game
@@ -36,10 +42,48 @@ public class Orchestration {
    * 
    * @param url the game server host to use
    */
-  public Orchestration(String url) {
+  public Orchestration(final String url) {
     _url = url;
-    _msg = null;
-    _pending = false;
+    _messages = new ConcurrentLinkedQueue<String>();
+    _workThread = new Thread(new Runnable() {
+
+      @Override
+      public void run() {
+        boolean reconnect = true;
+        while(true) {
+          try {
+            if(reconnect) {
+              reconnect = false;
+              SocketHints hints = new SocketHints();
+              hints.keepAlive = true;
+              hints.connectTimeout = 5000;
+              _socket = Gdx.net.newClientSocket(Protocol.TCP, url, 8000, hints);
+            }
+            
+            if(_socket.isConnected()) {
+              String msg = new BufferedReader(new InputStreamReader(_socket.getInputStream())).readLine();
+              if(msg != null) {
+                _messages.add(msg);
+              }
+              else {
+                throw new GdxRuntimeException("null msg received, socket issue most likely");
+              }
+            }
+          }
+          catch(IOException | GdxRuntimeException e) {
+            Gdx.app.error("AMF-Racing", "Orchestration problem - reconnecting in 5s", e);
+            reconnect = true;
+            try {
+              Thread.sleep(5000);
+            }
+            catch(InterruptedException ie) {
+              ie.printStackTrace();
+            }
+          }
+        }
+      }
+    });
+    _workThread.start();
   }
      
   /**
@@ -48,89 +92,35 @@ public class Orchestration {
    * @return any work which needs to be processed
    */
   public boolean hasWork() {
-    if(_msg != null) {
-      return true;
-    }
-    if(_pending == false) {
-      fetchWork();
-    }
-    return false;
-  }
-  
-  /**
-   * Get the currently available piece of work
-   * @return
-   */
-  public String getWork() {
-    String tmp = _msg;
-    _msg = null;
-    return tmp;
-  }
-  
-  private void fetchWork() {
-    HttpRequest get = new HttpRequest(HttpMethods.GET);
-    get.setUrl(_url + "/work");
-    _pending = true;
-    _pendingRequest = get;
-    
-    Gdx.net.sendHttpRequest(get, new HttpResponseListener() {
-
-      @Override
-      public void handleHttpResponse(HttpResponse response) {
-        _msg = response.getResultAsString();
-        _pending = false;
-        _pendingRequest = null;
-      }
-
-      @Override
-      public void failed(Throwable t) {
-        _msg = null;
-        _pending = false;
-        _pendingRequest = null;
-      }
-
-      @Override
-      public void cancelled() {
-        _pending = false;
-        _pendingRequest = null;
-      }
-    });
+    return _messages.peek() != null;
   }
   
   public void sendWin(int car) {
     sendCommand("{\"type\": \"win\", \"data\": {\"car\": \"" + car + "\"}}");
-    if(_pendingRequest != null) {
-      Gdx.net.cancelHttpRequest(_pendingRequest);
-    }
   }
   
   private void sendCommand(String msg) {
-    HttpRequest post = new HttpRequest(HttpMethods.POST);
-    post.setUrl(_url + "/event");
-    post.setHeader("Content-Type", "application/json");
-    post.setContent(msg);
-    Gdx.net.sendHttpRequest(post, new HttpResponseListener() {
-
-      @Override
-      public void handleHttpResponse(HttpResponse httpResponse) {
-        // TODO Auto-generated method stub
-        
+    if(_socket.isConnected()) {
+      try {
+        _socket.getOutputStream().write((msg + "\n").getBytes());
       }
-
-      @Override
-      public void failed(Throwable t) {
-        // TODO Auto-generated method stub
-        
+      catch(IOException e) {
+        /**
+         * If we try to send a command and the server isn't available, should we queue and try again?
+         */
+        e.printStackTrace();
       }
-
-      @Override
-      public void cancelled() {
-        // TODO Auto-generated method stub
-        
-      }
-    });
+    }
   }
   
+  /**
+   * Get the currently available piece of work
+   * @return the work to be done, if available, null otherwise
+   */
+  public String getWork() {
+    return _messages.poll();
+  }
+    
   public static interface WorkHandler {
     public void handle(JsonValue j);
   }

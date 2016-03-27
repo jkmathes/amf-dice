@@ -1,10 +1,16 @@
 var dicecomm = require('./dicecomm');
 var gamecomm = require('./gamecomm');
+var express = require('express');
 var passport = require('passport');
+var request = require('request');
 var parse = require('parse/node');
+var bodyParser = require('body-parser');
 var BasicStrategy = require('passport-http').BasicStrategy;
 
-parse.initialize('amf-stats', 'undefined');
+var app = express();
+app.use(bodyParser.json());
+
+parse.initialize('amf-stats', '');
 parse.serverURL = 'https://amf.jkmathes.org/parse';
 var DiceRoll = parse.Object.extend('DiceRoll');
 
@@ -41,8 +47,6 @@ dicecomm.init(function(dice, value) {
   logRollStat(dice, value);
 });
 
-var app = gamecomm.app;
-
 passport.use(new BasicStrategy(
   function(username, password, done) {
     if(username === 'amf' && password === 'amf') {
@@ -71,4 +75,8 @@ app.post('/command', passport.authenticate('basic', { session: false }), functio
   res.json({status: 'ok'});
 });
 
-app.use(gamecomm.express.static('public'), passport.authenticate('basic', { session: false }));
+app.use(express.static('public'), passport.authenticate('basic', { session: false }));
+
+app.listen(8080, function() {
+  console.log('Command server started on port 8080');
+});

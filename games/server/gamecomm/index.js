@@ -1,109 +1,36 @@
 var r = {
-  /**
-   * Any rolls which have been received from the dice,
-   * but not yet retrieved by the games
-   */
-  pendingRolls: [],
+  net: require('net'),
+  init: function(port, callback) {
+    r.server = r.net.createServer(function(socket) {
+      socket.pipe(socket);
+      r.socket = socket;
 
-  /**
-   * Send a single roll to the game. This will buffer
-   * the roll so that the long poll can either return
-   * immediately, or wait for the next poll
-   */
+      r.socket.on('end', function() {
+        console.log('Game disconnected');
+      });
+
+      r.socket.on('data', function(d) {
+        console.log('Received ' + JSON.stringify(JSON.parse(d)));
+        callback(JSON.parse(d));
+      });
+
+      r.socket.on('error', function(e) {
+        console.log(e);
+      });
+    })
+    r.server.listen(port);
+  },
+
   roll: function(which, value) {
-    r.pendingRolls.push({
-      'dice': which,
-      'value': value
-    });
-    if(r.pendingResponse) {
-      var dr = r.pendingRolls.shift();
-      r.respondRoll(r.pendingResponse.response, dr);
-      r.pendingResponse = null;
-    }
-  },
-
-  /**
-   * Utility to send a roll payload to the game
-   */
-  respondRoll: function(response, payload) {
-    response.json({
+    var d = {
       'type': 'roll',
-      'payload': payload
-    });
-  },
-
-  /**
-   * Utility to send a NOP to the game. This occurs if
-   * the game's long poll times out
-   */
-  respondNOP: function(response) {
-    response.json({
-      'type': 'nop'
-    });
-  },
-
-  /**
-   * If there is a queued roll to send, dequeue and return it.
-   * Otherwise, if the poll has expired, return a NOP
-   */
-  unloadRoll: function() {
-    if(r.pendingResponse) {
-      /**
-       * Set the long poll to 15 seconds
-       */
-      var exp = new Date().getTime() - 15000;
-      if(r.pendingResponse.timestamp < exp) {
-        if(r.pendingRolls.length > 0) {
-          var dr = r.pendingRolls.shift();
-          r.respondRoll(r.pendingResponse.response, dr);
-        } else {
-          r.respondNOP(r.pendingResponse.response);
-        }
-        r.pendingResponse = null;
+      'payload': {
+        'dice': which,
+        'value': value
       }
-    }
-  },
-
-  /**
-   * Initialize the dice communication system.
-   * This listens as an HTTP server
-   */
-  init: function(port, eventCallback) {
-    r.express = require('express');
-    r.bodyParser = require('body-parser');
-    r.app = r.express();
-    r.app.use(r.bodyParser.json());
-    r.pendingResponse = null;
-    r.app.get('/work', function(req, res) {
-      if(r.pendingRolls.length > 0) {
-        var dr = r.pendingRolls.shift();
-        r.respondRoll(res, dr);
-      } else {
-        r.pendingResponse = {
-          response: res,
-          timestamp: new Date().getTime()
-        };
-      }
-    });
-
-    r.app.post('/event', function(req, res) {
-      eventCallback(req.body);
-      res.json({'result': 'success'});
-    });
-
-    /**
-     * Check every second if we have timed out. If a roll comes in,
-     * the long poll will terminate immediately, but this interval check is
-     * purely an expiration validation
-     */
-    setInterval(function() {
-      r.unloadRoll();
-    }, 1000);
-
-    r.app.listen(port, function() {
-      console.log('Listening for dice comms on port ' + port);
-    });
+    };
+    r.socket.write(JSON.stringify(d) + '\n');
   }
-};
+}
 
 module.exports = r;
