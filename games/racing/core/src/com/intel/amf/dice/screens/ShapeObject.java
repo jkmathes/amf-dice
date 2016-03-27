@@ -4,6 +4,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
+/**
+ * An object that is simply a colored shape
+ * 
+ * @author jkmathes
+ */
 public class ShapeObject extends RenderObject {
   protected Color _color;
 
@@ -17,8 +22,6 @@ public class ShapeObject extends RenderObject {
 
   @Override
   protected void updateObject(float delta) {
-    // TODO Auto-generated method stub
-
   }
 
   @Override

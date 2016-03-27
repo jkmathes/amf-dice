@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 
 public class AssetLoader {
   public static TextureRegion [] _sprites;
@@ -114,11 +116,11 @@ public class AssetLoader {
       _diceBlue[f] = tr;
     }
     
-    //FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ClearSans-Regular.ttf"));
-    //FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-    //parameter.size = 12;
-    //_font = generator.generateFont(parameter);
-    _font = new BitmapFont(Gdx.files.internal("font.fnt"), true);
+    FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ClearSans-Regular.ttf"));
+    FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+    parameter.flip = true;
+    parameter.size = 48;
+    _font = generator.generateFont(parameter);
   }
   
   public static void dispose() {

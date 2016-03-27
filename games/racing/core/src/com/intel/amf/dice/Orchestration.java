@@ -95,10 +95,20 @@ public class Orchestration {
     return _messages.peek() != null;
   }
   
+  /**
+   * A win command from the game will let the server know
+   * that a particular car has crossed the finish line
+   * 
+   * @param car the car that won (0-based)
+   */
   public void sendWin(int car) {
     sendCommand("{\"type\": \"win\", \"data\": {\"car\": \"" + car + "\"}}");
   }
   
+  /**
+   * Send a single command to the game server
+   * @param msg the literal command to send. This routine will append a newline to the message
+   */
   private void sendCommand(String msg) {
     if(_socket.isConnected()) {
       try {

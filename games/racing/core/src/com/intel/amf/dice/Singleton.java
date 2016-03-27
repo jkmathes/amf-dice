@@ -16,6 +16,9 @@ public class Singleton {
    * The URL which hosts the game server
    */
   protected String _gameHost;
+  /**
+   * The game instance - we need this for setting screens wherever we might be
+   */
   protected AMFRacing _game;
   
   protected Singleton() {

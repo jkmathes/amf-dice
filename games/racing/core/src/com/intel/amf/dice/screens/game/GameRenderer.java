@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.intel.amf.dice.AssetLoader;
 import com.intel.amf.dice.Constants;
@@ -181,22 +182,32 @@ public class GameRenderer extends Renderer implements Constants {
     _batcher.begin();
     for(int f = 0; f < 10; f++) {
       for(int g = 0; g < 5; g++) {
-        _batcher.draw(AssetLoader._sprites[0], f * 128, g * 128);
+        _batcher.draw(AssetLoader._sprites[0], f * TILE_SIZE, g * TILE_SIZE);
         if(_world._map[g][f] > 0) {
-          _batcher.draw(AssetLoader._sprites[_world._map[g][f]], f * 128, g * 128);
+          _batcher.draw(AssetLoader._sprites[_world._map[g][f]], f * TILE_SIZE, g * TILE_SIZE);
         }
       }
     }
     _batcher.draw(AssetLoader._backrock, 0, 0);
-    _batcher.draw(AssetLoader._backrock, 0, 4 * 128);
-    _batcher.draw(AssetLoader._backrock, 9 * 128, 0);
-    _batcher.draw(AssetLoader._backrock, 9 * 128, 4 * 128);
-    _batcher.draw(AssetLoader._logo, 490, 412, 0, 0, 300, 200, 1.0f, 1.0f, 0f);
-    _batcher.draw(AssetLoader._amf, 435, 22);
-    //_batcher.draw(AssetLoader._logo, 4 * 128, 2 * 128 + 20, 0, 0, 104, 70, 1.0f, 1.0f, 0f);
-    //AssetLoader._font.draw(_batcher, "Test321", 5 * 128, 5 * 128 - 20);
-    //drawText("Test321", 5 * 128, 5 * 128 - 20, Color.YELLOW, 10);
+    _batcher.draw(AssetLoader._backrock, 0, 4 * TILE_SIZE);
+    _batcher.draw(AssetLoader._backrock, 9 * TILE_SIZE, 0);
+    _batcher.draw(AssetLoader._backrock, 9 * TILE_SIZE, 4 * TILE_SIZE); 
+    drawCenteredTexture(AssetLoader._logo, 412);
+    drawCenteredTexture(AssetLoader._amf, 22);
     _batcher.end();
+  }
+  
+  /**
+   * Draw a texture region x-axis centered at the given y-coordinate
+   * 
+   * @param tr the texture region to draw
+   * @param y the y coordinate at which to render
+   */
+  protected void drawCenteredTexture(TextureRegion tr, int y) {
+    int w = tr.getRegionWidth();
+    int h = tr.getRegionHeight();
+    int x = (GAME_WIDTH / 2) - (w / 2);
+    _batcher.draw(tr, x, y, 0, 0, w, h, 1.0f, 1.0f, 0f);
   }
   
   @Override

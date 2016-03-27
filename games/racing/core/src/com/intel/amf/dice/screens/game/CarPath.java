@@ -4,6 +4,13 @@ import java.util.ArrayList;
 
 import com.badlogic.gdx.math.Vector2;
 
+/**
+ * A path generator for a car to travel against
+ * 
+ * This is based on a game of width = 1280
+ * 
+ * @author jkmathes
+ */
 public class CarPath {
   public static ArrayList<Vector2> createPath() {
     ArrayList<Vector2> path;

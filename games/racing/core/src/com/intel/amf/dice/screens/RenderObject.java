@@ -6,7 +6,9 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
 /**
- * Created by jkmathes on 7/13/15.
+ * An object in the game world. Each object has its own position, accleration, and velocity
+ * 
+ * @author jkmathes
  */
 public abstract class RenderObject {
   protected Vector2 _position;

@@ -93,11 +93,28 @@ public class GameWorld extends World implements Constants {
    * Whether or not we have begun the game over fade
    */
   protected boolean _gameOverFadeBegin;
+  /**
+   * The 'shade' overlay when a game has been won
+   */
   protected ShapeObject _overlay;
+  /**
+   * Whether or not we are counting down to begin a game
+   */
   protected boolean _countdown;
+  /**
+   * If this frame should begin a game
+   */
   protected boolean _beginGame;
+  /**
+   * A fade-in for the game
+   */
   protected StartBanner _startBanner;
   
+  /**
+   * Create a game world
+   * 
+   * @param gameHeight the derived height of the game
+   */
   public GameWorld(float gameHeight) {
     super();
     createHandlers();
@@ -256,14 +273,6 @@ public class GameWorld extends World implements Constants {
       addObject(cd);
     }
 
-    /*
-    if(_beginGame) {
-      for(int f = 0; f < _cars.length; f++) {
-        roll(f, MathUtils.random(1, 6));
-      }
-    }
-    */
-
     /**
      * The "flung" queue is a set of objects
      * which have been dragged or thrown.
@@ -283,10 +292,18 @@ public class GameWorld extends World implements Constants {
     processCreatedObjects();
   }
 
+  /**
+   * Begin a game - this will trigger a reset
+   */
   public void beginGame() {
     _beginGame = true;
   }
   
+  /**
+   * Get the banner fading out when a game is begun
+   * 
+   * @return the banner to manipulate for game-start
+   */
   public StartBanner getStartBanner() {
     return _startBanner;
   }
