@@ -1,7 +1,20 @@
 var dicecomm = require('./dicecomm');
 var gamecomm = require('./gamecomm');
 var passport = require('passport');
+var parse = require('parse/node');
 var BasicStrategy = require('passport-http').BasicStrategy;
+
+parse.initialize('amf-stats', 'undefined');
+parse.serverURL = 'https://amf.jkmathes.org/parse';
+var DiceRoll = parse.Object.extend('DiceRoll');
+
+function logRollStat(did, value) {
+  var diceRoll = new DiceRoll();
+  console.log('Submitting...');
+  diceRoll.save({'did': did, 'value': value}).then(function(o) {
+    console.log('  ' + JSON.stringify(o));
+  });
+}
 
 /**
  * Initialize the comm system between the game and the server
@@ -25,6 +38,7 @@ gamecomm.init(8000, function(gameEvent) {
 dicecomm.init(function(dice, value) {
   console.log('Found roll of [' + value + '] from dice #' + dice);
   gamecomm.roll(dice, value);
+  logRollStat(dice, value);
 });
 
 var app = gamecomm.app;
@@ -45,6 +59,7 @@ app.post('/roll', passport.authenticate('basic', { session: false }), function(r
   var value = req.query.value;
   console.log(dice + ' - ' + value);
   gamecomm.roll(dice, value);
+  logRollStat(dice, value);
   res.json({status: 'ok'});
 });
 
