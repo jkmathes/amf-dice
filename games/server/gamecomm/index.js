@@ -29,7 +29,10 @@ var r = {
         'value': value
       }
     };
-    r.socket.write(JSON.stringify(d) + '\n');
+
+    if(r.socket && r.socket.remoteAddress) {
+      r.socket.write(JSON.stringify(d) + '\n');
+    }
   }
 }
 

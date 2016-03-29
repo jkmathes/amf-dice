@@ -59,8 +59,8 @@ passport.use(new BasicStrategy(
 ));
 
 app.post('/roll', passport.authenticate('basic', { session: false }), function(req, res) {
-  var dice = req.query.dice;
-  var value = req.query.value;
+  var dice = req.body.dice;
+  var value = req.body.value;
   console.log(dice + ' - ' + value);
   gamecomm.roll(dice, value);
   logRollStat(dice, value);
@@ -68,14 +68,15 @@ app.post('/roll', passport.authenticate('basic', { session: false }), function(r
 });
 
 app.post('/command', passport.authenticate('basic', { session: false }), function(req, res) {
-  var dice = req.query.dice;
-  var value = req.query.value;
+  var dice = req.body.dice;
+  var value = req.body.value;
   console.log('Sending ' + value + ' to dice #' + dice);
   dicecomm.sendCommand(dice, value);
   res.json({status: 'ok'});
 });
 
 app.use(express.static('public'), passport.authenticate('basic', { session: false }));
+app.use(bodyParser.json());
 
 app.listen(8080, function() {
   console.log('Command server started on port 8080');
