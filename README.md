@@ -34,3 +34,11 @@ curl -u amf:amf -X POST -H "Content-type: application/json" -d '{"dice": 1, "val
 </code></pre>
 
 This can be done to test connectivity without having live BLE-connected dice.
+
+To simulate sending a command '6' to dice '1':
+
+<pre><code>
+curl -u amf:amf -X POST -H "Content-type: application/json" -d '{"dice": 1, "value": 6}' http://<serverhost>:8080/command
+</code></pre>
+
+This can be done to test connectivity without having live BLE-connected dice.
