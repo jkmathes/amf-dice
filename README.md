@@ -30,7 +30,7 @@ Each CurieDice will detect its current roll and transmit that data to the server
 The dice component can be emulated through API into the node server. To simulate a roll of '6' from dice '1':
 
 <pre><code>
-curl -u amf:amf -X POST -H "Content-type: application/json" -d '{"dice": 1, "value": 6}' http://<serverhost>:8080/roll
+curl -u amf:amf -X POST -H "Content-type: application/json" -d '{"dice": 1, "value": 6}' http://&lt;serverhost&gt;:8080/roll
 </code></pre>
 
 This can be done to test connectivity without having live BLE-connected dice.
@@ -38,7 +38,7 @@ This can be done to test connectivity without having live BLE-connected dice.
 To simulate sending a command '6' to dice '1':
 
 <pre><code>
-curl -u amf:amf -X POST -H "Content-type: application/json" -d '{"dice": 1, "value": 6}' http://<serverhost>:8080/command
+curl -u amf:amf -X POST -H "Content-type: application/json" -d '{"dice": 1, "value": 6}' http://&lt;serverhost&gt;:8080/command
 </code></pre>
 
 This can be done to test connectivity without having live BLE-connected dice.
