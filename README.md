@@ -27,5 +27,10 @@ A demo for the Intel Arduino 101 where curie boards housed in dice move cars alo
 Each CurieDice will detect its current roll and transmit that data to the server over BLE. The server processes this data and transmits that data to the game itself - a thick client written in Java.
 
 ## Componentry
-The dice component can be emulated through API into the node server. To simulate a roll:
+The dice component can be emulated through API into the node server. To simulate a roll of '6' from dice '1':
 
+<pre><code>
+curl -u amf:amf -X POST -H "Content-type: application/json" -d '{"dice": 1, "value": 6}' http://<serverhost>:8080/roll
+</code></pre>
+
+This can be done to test connectivity without having live BLE-connected dice.
